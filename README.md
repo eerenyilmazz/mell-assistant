@@ -4,7 +4,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-planning-f59e0b?style=flat-square" alt="Status: planning">
-  <img src="https://img.shields.io/badge/plan-v0.4-3b82f6?style=flat-square" alt="Plan v0.4">
+  <img src="https://img.shields.io/badge/plan-v0.5-3b82f6?style=flat-square" alt="Plan v0.5">
   <img src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript strict">
   <img src="https://img.shields.io/badge/models-local--first-10b981?style=flat-square" alt="Local-first models">
   <img src="https://img.shields.io/badge/MCP-2026--07--28-8b5cf6?style=flat-square" alt="MCP spec 2026-07-28">

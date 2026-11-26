@@ -2,11 +2,11 @@
 
 | Field         | Value                                                |
 | ------------- | ---------------------------------------------------- |
-| Status        | Draft v0.4 — for review                              |
+| Status        | Draft v0.5 — for review                              |
 | Owner         | Eren                                                 |
 | Last updated  | 2026-11-26                                           |
 | Document type | Plan (no implementation in this phase)               |
-| Changes v0.4  | Technology stack re-selected (TypeScript end-to-end, Sec. 6.6–6.7); v0.3 added diagrams and wireframes; v0.2 added prior-art review |
+| Changes v0.5  | Fixes from external review of v0.4: device connectivity without listening ports (6.3), turn pipeline and cross-cutting concerns (6.5, 6.9), content-based taint (9.3), approval binding against TOCTOU (9.4), hybrid memory retrieval (10.9), consistent voice budget (11.2), data model aligned with ER diagram (13.1); project now follows `agent-playbook` (19) |
 
 ---
 
@@ -124,23 +124,23 @@ flowchart LR
         BE["mell-backend<br/>NestJS · Node LTS<br/>authenticated"]
         OLL["Ollama<br/>127.0.0.1 only"]
         PG[("PostgreSQL + pgvector<br/>127.0.0.1 only")]
-        MCPW["Windows MCP server<br/>first-party, scoped"]
+        MCPW["Windows MCP server<br/>stdio child process<br/>no port"]
         UIW --> BE
         BE --> OLL
         BE --> PG
-        BE -->|MCP client| MCPW
+        BE -->|"MCP over stdio"| MCPW
     end
 
     subgraph MAC["MacBook Air M1 (secondary)"]
         direction TB
         UIM["UI<br/>Browser / Tauri"]
-        MCPM["Mac MCP server<br/>first-party, scoped"]
+        MCPM["Device connector +<br/>Mac MCP server<br/>no listening port"]
     end
 
     CLOUD["Cloud AI provider<br/>opt-in, capped"]
 
     UIM -->|"private network<br/>Tailscale / WireGuard"| BE
-    BE -->|"private network"| MCPM
+    MCPM -->|"outbound WebSocket<br/>device-authenticated"| BE
     BE -->|"HTTPS, per data policy"| CLOUD
 
     classDef local fill:#1f2937,stroke:#3b82f6,color:#f9fafb
@@ -155,16 +155,53 @@ Key points:
 
 - The backend is the only component that holds state, credentials and policy.
 - The UI never accesses the database, the model runtime or the operating system directly.
-- Only the backend is reachable over the private network; Ollama and PostgreSQL are never reachable from another machine.
-- Each machine exposes its capabilities through its own first-party MCP server. A command such as "open IntelliJ on my Windows machine" issued from the Mac is routed by the backend to the Windows MCP server.
+- Only the backend listens on the private network; Ollama, PostgreSQL and every device MCP server are never reachable from another machine.
+- Each machine exposes its capabilities through its own first-party MCP server. A command such as "open IntelliJ on my Windows machine" issued from the Mac is routed by the backend to the Windows MCP server. How each server is reached is defined in Section 6.3.
 
-### 6.3 Device Integration Decision
+### 6.3 Device Integration and Connectivity
 
-The original plan included a custom `mell-device-agent` protocol per OS. This plan replaces it with **one first-party MCP server per device**:
+The original plan included a custom `mell-device-agent` protocol per OS. This plan replaces it with **one first-party MCP server per device**, using the official Tier 1 TypeScript MCP SDK for both client and servers. MCP-specific risks (Section 3.1) are addressed by first-party-only servers and pinned tool definitions (Section 9.6).
 
-- It uses a standard protocol and the official Tier 1 TypeScript MCP SDK for both client and servers, instead of a bespoke command protocol.
-- The security concerns specific to MCP (Section 3.1) are addressed by restricting servers to first-party code and by pinning tool definitions (Section 9.6), rather than by avoiding the protocol.
-- Once Tauri is introduced (Phase 3), the device MCP server may be hosted inside the Tauri application's Rust side to avoid a second process. Tracked as OD-3.
+**No device MCP server opens a listening port.** v0.4 required MCP servers to bind to loopback while also expecting the Windows backend to reach the Mac server over the network — a contradiction. v0.5 resolves it by making every connection originate from the side that already has a trust anchor:
+
+| Device | Transport | Who connects | Listening ports on the device |
+| --- | --- | --- | --- |
+| Windows host | MCP over **stdio**: the backend spawns the server as a child process | Backend → child process | None |
+| Mac (and any later device) | MCP JSON-RPC carried over an **outbound, authenticated WebSocket** opened by the *device connector* on the Mac to the backend's private-network address | Device → backend | None |
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant DC as Mac device connector
+    participant BE as Backend (private-network listener)
+    participant PE as Permission Engine
+    participant MS as Mac MCP server (in-process)
+
+    DC->>BE: WebSocket connect (TLS inside tailnet)
+    DC->>BE: Device token + device key signature
+    BE->>BE: Verify device record, scope, revocation
+    BE-->>DC: Session accepted
+    Note over DC,BE: MCP messages now flow over this channel
+    BE->>DC: tools/list
+    DC->>MS: tools/list
+    MS-->>DC: Definitions
+    DC-->>BE: Definitions (hash-checked, Sec. 9.6)
+    PE->>BE: Approved call
+    BE->>DC: tools/call (signed approval id)
+    DC->>MS: Execute within local allow-list
+    MS-->>DC: Result
+    DC-->>BE: Result (untrusted, taints turn)
+```
+
+Properties:
+
+- The Mac never accepts inbound connections, so it works behind NAT and has no port to scan or hijack.
+- Device credentials are per device, revocable from the UI, and rotated on re-pairing.
+- The connector enforces its own local allow-list (directories, applications) in addition to the backend policy, so a compromised backend cannot exceed what the user configured on that device.
+- If the backend is offline the connector retries with backoff; the Mac UI shows the host as offline (Section 6.9).
+- The connector may later be hosted inside the Tauri application to avoid a second process (OD-3).
+
+Alternative considered: binding the Mac MCP server to the tailnet interface with mutual TLS. Rejected for v0.x because it adds a listening service on the laptop and a second certificate lifecycle. Recorded in ADR 0009.
 
 ### 6.4 Trust Boundaries
 
@@ -199,7 +236,34 @@ flowchart TB
     PE --> MEMW
 ```
 
-### 6.5 Chat Request Flow (v0.1)
+### 6.5 Turn Pipeline
+
+A *turn* is one user input and everything MELL does in response. Every turn passes through the same fixed stages, owned by a `TurnOrchestrator` in the `conversation` module. This is MELL's "cognitive layer" in its v0.1 form: explicit, deterministic stages around the model, not a separate planner or agent system.
+
+```mermaid
+flowchart LR
+    IN["1 · Intake<br/>auth, correlation id,<br/>idempotency key"] --> CTX["2 · Context build<br/>history, retrieved memory,<br/>device status"]
+    CTX --> GEN["3 · Generate<br/>model call with<br/>allowed tools"]
+    GEN -->|"tool proposal"| POL["4 · Policy<br/>Permission Engine,<br/>taint, approval"]
+    POL -->|"allowed / approved"| EXE["5 · Execute<br/>MCP call with<br/>bound approval"]
+    EXE -->|"result (untrusted)"| GEN
+    GEN -->|"final text"| OUT["6 · Respond<br/>stream to UI"]
+    OUT --> REC["7 · Record<br/>messages, usage,<br/>activity, memory candidates"]
+```
+
+| Stage | Responsibility | v0.1 scope | Later |
+| --- | --- | --- | --- |
+| 1 Intake | Authenticate, assign correlation id, check idempotency key, open turn record | Yes | — |
+| 2 Context build | Select history window, run memory retrieval (10.9), attach device status, mark taint of every included block | Yes | Summarised long history |
+| 3 Generate | Call the selected model with a small, policy-filtered tool list; bounded tool-loop (max steps per turn) | Yes, max 4 tool steps | Rule-based routing (7.5) |
+| 4 Policy | Classify each proposed call; allow, deny or create a bound approval (9.4) | Yes | — |
+| 5 Execute | Run the call on the target device; feed the result back as untrusted data | Yes | Long-running tasks (Phase 6) |
+| 6 Respond | Stream tokens and tool events over SSE | Yes | Voice output (Phase 5) |
+| 7 Record | Persist messages, usage, activity; propose memory candidates (Phase 4) | Yes | Candidate extraction |
+
+Intent classification and multi-step planning are **not** separate stages in v0.1; the model does both within stage 3 under the policy of stage 4. A dedicated planner is reconsidered in Phase 6 only if single-model turns prove insufficient on the evaluation set.
+
+### 6.5.1 Chat Request Flow (v0.1)
 
 ```mermaid
 sequenceDiagram
@@ -214,8 +278,9 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     U->>UI: Types message (Turkish)
-    UI->>API: POST /api/conversations/{id}/messages
+    UI->>API: POST /api/conversations/{id}/messages<br/>Idempotency-Key, X-Correlation-Id
     API->>APP: SendMessage use case
+    APP->>DB: Insert turn (unique idempotency key)
     APP->>DB: Persist user message
     APP->>MEM: Retrieve relevant memories (active scope + global)
     MEM-->>APP: Confirmed entries as delimited data
@@ -276,7 +341,7 @@ Three stacks were compared for this project and this developer.
 
 **Decision: B.** The deciding factors are one language across every component, a Tier 1 MCP SDK on the current spec, the most mature provider-agnostic LLM toolkit, and a voice path that does not require a second language. ML-heavy pieces that are weak in TypeScript (Turkish embeddings, STT) are consumed as prebuilt services, not written in-process.
 
-**Accepted costs:** the highest supply-chain exposure of the three (mitigated by Section 6.8), and less backend experience in Node than in Java (mitigated by NestJS, whose module/DI/guard model mirrors Spring). If either cost proves too high in Phase 0–1, option A remains viable because all AI and storage access is behind ports. Recorded as ADR-001.
+**Accepted costs:** the highest supply-chain exposure of the three (mitigated by Section 6.8), and less backend experience in Node than in Java (mitigated by NestJS, whose module/DI/guard model mirrors Spring). If either cost proves too high in Phase 0–1, option A remains viable because all AI and storage access is behind ports. Recorded as ADR 0001.
 
 ### 6.8 Supply-Chain Controls
 
@@ -290,6 +355,24 @@ Because MELL will hold personal data and run tools on the user's machines, a com
 6. **No publish credentials** on developer machines; nothing is published to npm from this repository.
 7. **Secrets** never in `.env` files committed to git; developer machine tokens scoped and short-lived.
 8. **Container images** pinned by digest for PostgreSQL, Ollama, TEI and LiveKit.
+
+### 6.9 Cross-Cutting Concerns
+
+| Concern | Rule | From phase |
+| --- | --- | --- |
+| **Correlation** | Every turn gets a correlation id at intake (or accepts the client's `X-Correlation-Id`). It is propagated to model calls, MCP calls, approvals, activity entries, logs and OpenTelemetry spans. | 0 |
+| **Idempotency** | Mutating endpoints accept an `Idempotency-Key`; the key is stored with a unique constraint and the first result is replayed for duplicates. Approval execution is single-use by construction (9.4). | 1 |
+| **Cancellation** | The user can stop a turn at any time. Cancellation propagates an abort signal to the model stream and to in-flight MCP calls; tool calls that have not started are not started; the turn is recorded as `cancelled` with what completed. | 1 |
+| **Timeouts** | Every outbound call (model, MCP, embedding, cloud) has an explicit timeout; no library defaults. | 1 |
+| **Recovery** | Defined degraded states instead of generic errors (table below). | 1–3 |
+
+| Failure | Behaviour |
+| --- | --- |
+| Local model unavailable | Turn fails fast with a clear status; cloud fallback only if enabled, under cap and the context contains no `sensitive` data |
+| Model returns malformed tool call | Rejected and logged (7.4); the model receives an error result once, then the turn ends with an explanation |
+| MCP server or device connector disconnected | Tools of that device are hidden from the tool list; pending approvals for that device expire; UI shows the device as offline |
+| Backend restarted mid-turn | Turns left `in_progress` are marked `interrupted` on startup; nothing is re-executed automatically |
+| Database unavailable | Backend reports not-ready on the health endpoint and refuses new turns |
 
 ## 7. Model Strategy
 
@@ -367,13 +450,13 @@ flowchart TD
 | -------------- | ----------------------------------------------------------- | ----- |
 | `security`     | Authentication, authorisation, origin validation            | 0     |
 | `common`       | Cross-cutting utilities only; no business logic             | 0     |
-| `conversation` | Conversations, messages, context assembly, streaming        | 1     |
+| `conversation` | Conversations, turns, `TurnOrchestrator` (6.5), streaming, cancellation | 1 |
 | `ai`           | Provider ports, adapters, timeouts, fallback, usage, spend cap | 1  |
 | `memory`       | Memory entries, sources, scopes, embeddings, search, export | 2     |
 | `tools`        | MCP client integration, tool catalogue, definition pinning  | 2     |
 | `approval`     | Policy evaluation, trifecta rule, approval requests         | 2     |
 | `activity`     | Audit log of tool invocations, approvals and memory changes | 2     |
-| `device`       | Device registry, device authentication, routing to MCP      | 3     |
+| `device`       | Device registry (host in Phase 2), connector authentication and routing (Phase 3) | 2–3 |
 | `voice`        | Session tokens, voice session management                    | 5     |
 | `agent`        | Agent profiles (prompt + allowed tools), orchestration      | 6     |
 | `task`         | Reminders, scheduled and long-running jobs                  | 6     |
@@ -382,7 +465,7 @@ flowchart TD
 
 ### 8.2 Package Structure
 
-```
+```text
 <module>/
 ├── api/             REST controllers and DTOs
 ├── application/     Use cases and orchestration; transaction boundaries
@@ -441,19 +524,35 @@ The model **proposes**; the **Permission Engine decides**. Security never depend
 
 ### 9.3 Trifecta Rule
 
-Each conversation turn carries a **taint state**:
+Each conversation turn carries a **taint state**.
 
-- A turn becomes *tainted* as soon as untrusted content enters its context: web pages, file contents outside a trusted directory, documents, tool results from external sources, imported data.
+**Taint follows the provenance of content, not the permission to access it.** Being allowed to read a directory says nothing about whether a file in it is safe: a PDF in `Downloads` can carry a prompt injection, and even a file *name* returned by a directory listing is attacker-controllable. v0.4 treated results from a "trusted directory" as clean; v0.5 removes that exception.
+
+| Content entering the context | Taints the turn? | Reason |
+| --- | --- | --- |
+| The user's own typed or spoken input | No | It is the principal's instruction |
+| Confirmed memory entries written by the user | No | User-authored and confirmed |
+| `system.status` (numbers produced by first-party code) | No | Fixed schema, no free text from outside |
+| `filesystem.list` results | **Yes** | File and folder names are free text from any source |
+| `filesystem.read` results, any directory | **Yes** | File contents are arbitrary third-party data |
+| Web pages, emails, documents, imports | **Yes** | External content |
+| Memory candidates or entries with `origin_tainted = true` | **Yes** | Inherit the taint of their origin |
+| Any tool result with free-text fields | **Yes**, unless the tool is explicitly registered as `structured-only` | Default-deny for trust |
+
+Rules:
+
+- A tool may be registered as `structured-only` only if every output field is typed (numbers, enums, booleans, timestamps) and produced by first-party code. This is reviewed in the PR that adds the tool.
 - In a tainted turn, any **External** or **Destructive** action is blocked outright in v0.x, and requires explicit approval with the taint source shown once those action classes exist.
 - Memory writes proposed in a tainted turn are stored only as unconfirmed candidates.
+- Taint is per turn and recorded on the turn and on every message it produced.
 
 This removes the exfiltration leg of the lethal trifecta by construction rather than by detection.
 
 ```mermaid
 stateDiagram-v2
     [*] --> Clean: New turn
-    Clean --> Tainted: Untrusted content enters context<br/>(web, external file, document, import, external tool result)
-    Clean --> Clean: Trusted tool result<br/>(system.status, trusted directory)
+    Clean --> Tainted: Untrusted content enters context<br/>(any file name or content, web, document, import, free-text tool result)
+    Clean --> Clean: Structured-only tool result<br/>(e.g. system.status)
     Tainted --> Tainted: Any further content
 
     state Clean {
@@ -494,6 +593,22 @@ flowchart LR
 5. Only an explicit approval executes the call; requests expire on timeout.
 6. Every call, decision and result is written to `activity_logs`.
 
+#### Approval binding (TOCTOU protection)
+
+What the user approved must be exactly what runs. Between approval and execution the tool definition, the arguments or the target (for example the set of files matching a pattern) could change. Each approval is therefore bound to a fingerprint and re-verified immediately before execution:
+
+| Bound field | Content |
+| --- | --- |
+| `approval_id` | Random, single-use; marked consumed atomically when execution starts |
+| `tool_definition_hash` | Hash of the pinned definition (9.6) |
+| `canonical_args_hash` | Hash of the canonicalised (sorted-key JSON) arguments |
+| `resolved_scope` | The concrete targets shown to the user, e.g. absolute paths with size and modification time, or content hashes for files ≤ 10 MB |
+| `device_id` | Target device |
+| `turn_id`, `correlation_id` | Origin of the request |
+| `expires_at` | Short window (default 5 minutes) |
+
+At execution the device side recomputes the resolved scope and compares it with the bound value. Any mismatch — changed definition, different arguments, a file added, removed or modified — aborts the call, logs `approval.binding_mismatch` and asks the user again with the new scope. Approvals cannot be replayed, transferred to another device or widened.
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -526,11 +641,19 @@ sequenceDiagram
             A->>UI: Push pending approval (SSE)
             UI->>U: Show action, scope, taint source
             alt Approved before timeout
-                U->>A: Approve
-                A->>S: Execute
-                S-->>A: Result
-                A->>L: Approved + executed
-                A-->>M: Result
+                U->>A: Approve (approval_id)
+                A->>A: Consume approval_id (single use)
+                A->>S: Execute with binding
+                S->>S: Recompute resolved scope + definition hash
+                alt Binding matches
+                    S-->>A: Result
+                    A->>L: Approved + executed
+                    A-->>M: Result
+                else Binding mismatch
+                    S-->>A: Aborted, nothing executed
+                    A->>L: approval.binding_mismatch
+                    A->>UI: Re-ask with new scope
+                end
             else Rejected or expired
                 A->>L: Rejected / expired
                 A-->>M: Not executed
@@ -658,13 +781,14 @@ Persistent memory can carry injected instructions from one session into all futu
 
 ### 10.7 Schema (Phase 2)
 
-```
+```text
 memory_scopes
   id, user_id, name, created_at
 
 memory_entries
   id, user_id, scope_id, memory_type, content,
   embedding vector(N),
+  content_tsv tsvector GENERATED (to_tsvector('turkish', content)),
   confidence, sensitivity, is_confirmed, origin_tainted,
   valid_from, valid_until, superseded_by,
   created_at, updated_at
@@ -693,6 +817,28 @@ flowchart LR
     RV -->|Reject| BIN["Discarded"]
 ```
 
+### 10.9 Retrieval
+
+Pure vector search misses exact terms that matter in a personal assistant — project names, file names, version numbers, people's names — and Turkish morphology makes naive keyword search miss inflected forms. Retrieval is therefore **hybrid** from Phase 2:
+
+```mermaid
+flowchart LR
+    Q["Turn context"] --> F["Filter<br/>user, active scope + global,<br/>is_confirmed, valid now,<br/>not superseded"]
+    F --> V["Vector search<br/>pgvector, cosine, top 20"]
+    F --> T["Full-text search<br/>PostgreSQL 'turkish' config,<br/>top 20"]
+    V --> R["Fuse<br/>reciprocal rank fusion"]
+    T --> R
+    R --> B["Budget<br/>top k within token limit"]
+    B --> P["Inject as delimited<br/>data block"]
+```
+
+- **Metadata filters first**, in SQL, so no out-of-scope or unconfirmed entry can be retrieved regardless of similarity.
+- **Two retrievers**: pgvector cosine similarity and PostgreSQL full-text search with the built-in `turkish` configuration (stemming) over a generated `tsvector` column.
+- **Fusion**: reciprocal rank fusion (no score calibration needed between retrievers).
+- **Budget**: a fixed token budget for memory in the prompt; entries are cut by rank, never truncated mid-entry.
+- **Evaluation**: the recall test (14.3) compares vector-only, full-text-only and hybrid; hybrid is kept only if it is not worse than the best single retriever.
+- Re-ranking with a cross-encoder is out of scope for v0.x.
+
 ## 11. Voice (Phase 5)
 
 ### 11.1 Approach
@@ -705,22 +851,29 @@ flowchart LR
 
 ### 11.2 Latency Budget
 
-Target: end of user speech to first audio **≤ 1.0 s at P50, ≤ 1.5 s at P95**, measured per stage:
+v0.4 set a 1.0 s target whose stage budgets summed to 1,050 ms before any network or orchestration overhead — the target could not be met by construction. v0.5 separates an **acceptance target** from a **stretch target** and makes the stage budgets add up:
 
-| Stage                          | Budget (P50) |
-| ------------------------------ | ------------ |
-| End-of-utterance detection     | ≤ 250 ms     |
-| STT final transcript           | ≤ 300 ms     |
-| LLM time-to-first-token        | ≤ 350 ms     |
-| TTS time-to-first-audio        | ≤ 150 ms     |
+| Stage | Acceptance budget (P50) | Stretch budget (P50) |
+| --- | --- | --- |
+| End-of-utterance detection | 250 ms | 200 ms |
+| STT final transcript (after end of utterance) | 300 ms | 200 ms |
+| MELL core: context build, retrieval, policy | 100 ms | 50 ms |
+| LLM time-to-first-token | 400 ms | 300 ms |
+| TTS time-to-first-audio | 150 ms | 100 ms |
+| Transport, buffering, playback start | 100 ms | 50 ms |
+| **Total, end of speech → first audio** | **1,300 ms** | **900 ms** |
+
+- **Acceptance:** P50 ≤ 1.3 s and P95 ≤ 2.0 s on the Turkish voice evaluation set. Phase 5 exits on this.
+- **Stretch:** P50 ≤ 0.9 s; pursued only after acceptance is met.
+- Budgets are revised after the first measured baseline; the per-stage traces decide where time is actually spent.
 
 ```mermaid
 flowchart LR
-    MIC["Mic<br/>push-to-talk"] --> VAD["VAD /<br/>end-of-utterance<br/>≤ 250 ms"]
-    VAD --> STT["STT<br/>≤ 300 ms"]
-    STT --> CORE["MELL core<br/>memory, permissions"]
-    CORE --> LLM["LLM TTFT<br/>≤ 350 ms"]
-    LLM -->|"token stream"| TTS["TTS first audio<br/>≤ 150 ms"]
+    MIC["Mic<br/>push-to-talk"] --> VAD["VAD /<br/>end-of-utterance<br/>250 ms"]
+    VAD --> STT["STT<br/>300 ms"]
+    STT --> CORE["MELL core<br/>memory, permissions<br/>100 ms"]
+    CORE --> LLM["LLM TTFT<br/>400 ms"]
+    LLM -->|"token stream"| TTS["TTS first audio<br/>150 ms"]
     TTS --> SPK["Speaker"]
     SPK -.->|"barge-in:<br/>user speaks"| VAD
     VAD -.->|"cancel playback"| TTS
@@ -745,14 +898,14 @@ Every voice turn is traced with one span per stage. Providers (cloud real-time, 
 
 ## 12. Security and Privacy
 
-1. **Network binding:** Ollama, PostgreSQL and the MCP servers bind to `127.0.0.1` only. The backend binds to loopback and, when cross-device access is enabled, to the private-network interface only. A startup self-check refuses to run if any of these is bound to a public interface.
+1. **Network binding:** Ollama and PostgreSQL bind to `127.0.0.1` only. Device MCP servers open **no listening port** at all (stdio on the host, outbound connector on other devices, Section 6.3). The backend binds to loopback and, when cross-device access is enabled, to the private-network interface only. A startup self-check refuses to run if any service is bound to a public interface.
 2. **Local endpoint authentication:** the backend requires authentication even on localhost, validates `Origin`/`Host` headers, and exposes no unauthenticated WebSocket or SSE endpoint. This prevents malicious web pages in the user's browser from driving the local agent.
 3. **Private network:** cross-device traffic uses Tailscale or WireGuard; nothing is exposed publicly.
-4. **Device identity:** devices authenticate to the backend; each acts only within its granted scope.
+4. **Device identity:** each device has its own revocable credential and key; the device connector authenticates on every connection, and each device acts only within its granted scope and its own local allow-list.
 5. **Secrets:** kept in environment variables or an OS secret store; never in frontend code, logs or the repository. Secret scanning runs in CI.
 6. **Cloud data policy:** each cloud request is logged with provider, model and data classification; `sensitive` data is never sent without per-request consent. Remote/"cloud-routed" models offered through the local runtime are disabled.
 7. **Spend cap:** configurable monthly cap per cloud provider; requests fail closed when exceeded; usage visible in the UI.
-8. **Audit:** all tool invocations, approvals and memory changes are recorded.
+8. **Audit:** all tool invocations, approvals (with their binding), binding mismatches and memory changes are recorded with the turn's correlation id.
 9. **Kill switches:** the user can disable listening, remote access, tools and cloud providers individually from the UI.
 10. **Background tasks (Phase 6):** scheduled or proactive tasks run with a reduced permission set and can never perform External or Destructive actions without a live approval.
 11. **Dependency hygiene:** Ollama, AI SDK and MCP SDK versions are pinned; all supply-chain controls in Section 6.8 apply.
@@ -761,23 +914,24 @@ Every voice turn is traced with one span per stage. Providers (cloud real-time, 
 
 ### 13.1 Tables
 
-| Table               | Phase |
-| ------------------- | ----- |
-| `users`             | 0     |
-| `conversations`     | 1     |
-| `messages`          | 1     |
-| `ai_models`         | 1     |
-| `model_usage_logs`  | 1     |
-| `memory_scopes`     | 2     |
-| `memory_entries`    | 2     |
-| `memory_sources`    | 2     |
-| `tool_definitions`  | 2     |
-| `tool_permissions`  | 2     |
-| `approval_requests` | 2     |
-| `activity_logs`     | 2     |
-| `devices`           | 3     |
+| Table               | Phase | Purpose |
+| ------------------- | ----- | ------- |
+| `users`             | 0     | Single user in v0.x; keys every other table |
+| `conversations`     | 1     | Conversation metadata, selected model, active memory scope |
+| `turns`             | 1     | One row per user input: correlation id, idempotency key, status, taint |
+| `messages`          | 1     | User, assistant and tool messages of a turn |
+| `ai_models`         | 1     | Registered models and runtime settings |
+| `model_usage_logs`  | 1     | Tokens, latency and cost per model call |
+| `memory_scopes`     | 2     | User-defined memory spaces |
+| `memory_entries`    | 2     | Memory facts with embedding, full-text vector and lifecycle fields |
+| `memory_sources`    | 2     | Provenance of each memory entry |
+| `devices`           | 2     | Registered devices; the host is the first device |
+| `tool_definitions`  | 2     | Pinned MCP tool definitions per device |
+| `tool_permissions`  | 2     | Policy per tool: action class, allowed scope, auto-approve |
+| `approval_requests` | 2     | Approvals with their binding (9.4) |
+| `activity_logs`     | 2     | Append-only audit trail |
 
-Other tables (`agents`, `agent_runs`, `tasks`, `scheduled_jobs`, etc.) are introduced with their phases.
+`devices` moves from Phase 3 to Phase 2 because the Windows host is itself a device with a pinned tool set. Other tables (`agents`, `agent_runs`, `tasks`, `scheduled_jobs`, etc.) are introduced with their phases. This table, the ER diagram and the schema in 10.7 are kept consistent; a change to one is a change to all three in the same PR.
 
 ```mermaid
 erDiagram
@@ -785,18 +939,20 @@ erDiagram
     users ||--o{ memory_scopes : owns
     users ||--o{ memory_entries : owns
     users ||--o{ devices : owns
-    users ||--o{ approval_requests : decides
-    conversations ||--o{ messages : contains
+    conversations ||--o{ turns : contains
     conversations }o--|| memory_scopes : "active scope"
-    messages ||--o{ model_usage_logs : produces
+    conversations }o--|| ai_models : "selected model"
+    turns ||--o{ messages : produces
+    turns ||--o{ model_usage_logs : incurs
+    turns ||--o{ approval_requests : raises
     ai_models ||--o{ model_usage_logs : "used in"
     memory_scopes ||--o{ memory_entries : groups
     memory_entries ||--o{ memory_sources : "sourced from"
     memory_entries |o--o| memory_entries : "superseded_by"
     devices ||--o{ tool_definitions : exposes
-    tool_definitions ||--o{ tool_permissions : "governed by"
+    tool_definitions ||--|| tool_permissions : "governed by"
     tool_definitions ||--o{ approval_requests : "requested for"
-    approval_requests ||--o{ activity_logs : records
+    devices ||--o{ approval_requests : targets
 
     users {
         uuid id PK
@@ -807,16 +963,53 @@ erDiagram
         uuid id PK
         uuid user_id FK
         uuid scope_id FK
+        uuid model_id FK
         string title
-        string model_id
         timestamp created_at
+        timestamp updated_at
+    }
+    turns {
+        uuid id PK
+        uuid conversation_id FK
+        string correlation_id
+        string idempotency_key UK
+        string status "in_progress|completed|cancelled|failed|interrupted"
+        boolean tainted
+        json taint_sources
+        timestamp started_at
+        timestamp finished_at
     }
     messages {
         uuid id PK
-        uuid conversation_id FK
-        string role
+        uuid turn_id FK
+        string role "user|assistant|tool"
         text content
         boolean tainted
+        timestamp created_at
+    }
+    ai_models {
+        uuid id PK
+        string provider "ollama|cloud"
+        string name
+        int context_length
+        boolean tools_supported
+        boolean enabled
+    }
+    model_usage_logs {
+        uuid id PK
+        uuid turn_id FK
+        uuid model_id FK
+        int input_tokens
+        int output_tokens
+        int ttft_ms
+        int total_ms
+        decimal cost
+        timestamp created_at
+    }
+    memory_scopes {
+        uuid id PK
+        uuid user_id FK
+        string name
         timestamp created_at
     }
     memory_entries {
@@ -826,42 +1019,72 @@ erDiagram
         string memory_type
         text content
         vector embedding
+        tsvector content_tsv
+        float confidence
         string sensitivity
         boolean is_confirmed
         boolean origin_tainted
         uuid superseded_by FK
         timestamp valid_from
         timestamp valid_until
+        timestamp created_at
+        timestamp updated_at
     }
     memory_sources {
         uuid id PK
         uuid memory_entry_id FK
         string source_type
         string source_ref
+        timestamp created_at
+    }
+    devices {
+        uuid id PK
+        uuid user_id FK
+        string name
+        string platform "windows|macos"
+        string connection "stdio|connector"
+        string credential_fingerprint
+        timestamp last_seen_at
+        timestamp revoked_at
     }
     tool_definitions {
         uuid id PK
         uuid device_id FK
         string name
         string definition_hash
-        string status
+        boolean structured_only
+        string status "pending|active|disabled|revoked"
+        timestamp approved_at
+    }
+    tool_permissions {
+        uuid id PK
+        uuid tool_definition_id FK
+        string action_class "read|launch|write|destructive|external|financial"
+        json allowed_scope
+        boolean auto_approve
     }
     approval_requests {
         uuid id PK
+        uuid turn_id FK
         uuid tool_definition_id FK
-        json scope
-        string status
+        uuid device_id FK
+        string tool_definition_hash
+        string canonical_args_hash
+        json resolved_scope
+        string status "pending|approved|rejected|expired|consumed|mismatch"
         timestamp expires_at
+        timestamp consumed_at
     }
     activity_logs {
         uuid id PK
+        string correlation_id
         string event_type
         json payload
         timestamp created_at
     }
 ```
 
-The diagram shows the main relationships; column lists are indicative and finalised in Drizzle migrations.
+Column types are indicative; exact types, indexes and constraints are finalised in Drizzle migrations. `activity_logs` is append-only: the application role has no `UPDATE` or `DELETE` permission on it.
 
 ### 13.2 Endpoints
 
@@ -883,6 +1106,12 @@ The diagram shows the main relationships; column lists are indicative and finali
 | POST   | `/api/approvals/{id}/approve`            | 2     |
 | POST   | `/api/approvals/{id}/reject`             | 2     |
 | GET    | `/api/activity`                          | 2     |
+| POST   | `/api/turns/{id}/cancel`                 | 1     |
+| GET    | `/api/devices`                           | 2     |
+| POST   | `/api/devices/pair`                      | 3     |
+| DELETE | `/api/devices/{id}` (revoke)             | 3     |
+
+All mutating endpoints accept `Idempotency-Key`; all endpoints accept and echo `X-Correlation-Id` (6.9).
 
 Chat responses stream via SSE. WebSocket is introduced only when bidirectional real-time traffic is required (voice, device status).
 
@@ -898,7 +1127,8 @@ Chat responses stream via SSE. WebSocket is introduced only when bidirectional r
 | API                | Endpoints, authentication, origin checks                      | 1          |
 | Model evaluation   | Fixed Turkish prompt set per model; quality, TTFT, tokens/s   | 1          |
 | Tool-call contract | Valid/invalid/multi-step tool calls per model and runtime version | 2      |
-| Security           | Prompt-injection corpus, trifecta rule, tool-definition change, unauthenticated local requests | 2 |
+| Security           | Prompt-injection corpus, content-based taint (file names and contents), tool-definition change, approval binding mismatch and replay, unauthenticated local requests | 2 |
+| Reliability        | Idempotent replay, cancellation mid-stream and mid-tool, interrupted turns after restart | 1 |
 | Memory evaluation  | Recall, update, correction, deletion, scope isolation         | 2          |
 | Recovery           | Network loss, host offline, model unavailable                 | 3          |
 | Voice              | Per-stage latency, Turkish WER, barge-in, false wake rate     | 5          |
@@ -930,6 +1160,8 @@ A Turkish query/fact set (morphological variants, synonyms, English–Turkish co
 | Cross-scope leakage                            | 0         |
 | Valid tool calls on contract suite (local)     | ≥ 0.95, else fallback per Sec. 7.4 |
 | Prompt-injection corpus: blocked External/Destructive actions | 100% |
+| Approval executed after binding mismatch or replay | 0 |
+| Duplicate execution on repeated `Idempotency-Key` | 0 |
 | Chat TTFT P50 (local, short prompt)            | Measured and recorded in Phase 1; target set from baseline |
 
 ## 15. Delivery Phases
@@ -981,7 +1213,7 @@ Phases 0–2 (highlighted) make up v0.1. No phase after Phase 2 starts until the
 - Model usage logging and spend cap.
 - Model evaluation baseline recorded.
 
-**Exit:** a Turkish conversation streams end-to-end; history persists across restarts; switching to the cloud model requires no code change; baseline TTFT and quality recorded.
+**Exit:** a Turkish conversation streams end-to-end; history persists across restarts; switching to the cloud model requires no code change; a turn can be cancelled mid-stream; a repeated request with the same `Idempotency-Key` does not create a second turn; baseline TTFT and quality recorded.
 
 ### Phase 2 — Memory and First Tools (v0.1)
 
@@ -993,7 +1225,7 @@ Phases 0–2 (highlighted) make up v0.1. No phase after Phase 2 starts until the
 - Tool-call contract and security test suites.
 - Backup job.
 
-**Exit:** memory and security thresholds in Section 14.4 are met; a file read outside scope is blocked and logged; a modified tool definition disables the tool.
+**Exit:** memory and security thresholds in Section 14.4 are met; a file read outside scope is blocked and logged; reading any file taints the turn; a modified tool definition disables the tool; an approval whose target changed after approval is not executed.
 
 ### Phase 3 — Second Device and Desktop Shell
 
@@ -1002,7 +1234,7 @@ Phases 0–2 (highlighted) make up v0.1. No phase after Phase 2 starts until the
 - First-party Mac MCP server; routing by target device.
 - Host-offline handling in the client; tested restore from backup.
 
-**Exit:** from the Mac, the user can chat and run an allowed tool on both machines; an offline host produces a clear status.
+**Exit:** from the Mac, the user can chat and run an allowed tool on both machines; the Mac opens no listening port (verified with a port scan); a revoked device cannot reconnect; an offline host produces a clear status.
 
 ### Phase 4 — Assisted Memory and Routing
 
@@ -1017,7 +1249,7 @@ Phases 0–2 (highlighted) make up v0.1. No phase after Phase 2 starts until the
 - Provider evaluation and ADR; push-to-talk; streaming STT/TTS; barge-in; per-stage tracing.
 - Wake-word experiment as a separate, optional step.
 
-**Exit:** latency budget in Section 11.2 met at P50 on Turkish speech.
+**Exit:** acceptance latency targets in Section 11.2 met (P50 ≤ 1.3 s, P95 ≤ 2.0 s) on the Turkish voice set.
 
 ### Phase 6 — Agents, Automation and External Actions
 
@@ -1053,7 +1285,7 @@ flowchart LR
 
 ### 16.2 Chat
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────────┐
 │ MELL                         Model: [qwen3:8b · local ▾]  Scope: [MELL ▾] │
 ├────────────┬─────────────────────────────────────────────────────────┤
@@ -1079,7 +1311,7 @@ Every memory write and tool call is shown inline with its status, so nothing hap
 
 ### 16.3 Memory Center
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Memory Center                      [Search…        ]  [Export ▾] [+ Add] │
 ├──────────────┬───────────────────────────────────────────────────────┤
@@ -1101,7 +1333,7 @@ Every memory write and tool call is shown inline with its status, so nothing hap
 
 ### 16.4 Approval Dialog
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │ ⚠  Approval required                         expires 4:58 │
 ├──────────────────────────────────────────────────────────┤
@@ -1111,7 +1343,7 @@ Every memory write and tool call is shown inline with its status, so nothing hap
 │           • report-old.pdf     (2.1 MB)                   │
 │           • report-old (1).pdf (2.1 MB)                   │
 │           • notes.tmp          (4 KB)                     │
-│ Taint     Turn is clean                                   │
+│ Taint     Clean · targets selected by the user in the UI  │
 │ Requested by model: qwen3:8b · conversation "Cleanup"     │
 ├──────────────────────────────────────────────────────────┤
 │              [ Reject ]              [ Approve once ]     │
@@ -1122,7 +1354,7 @@ If the turn is tainted, External and Destructive actions do not reach this dialo
 
 ### 16.5 Activity
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Activity                 Filter: [All ▾] [Device ▾] [Last 24 h ▾]      │
 ├───────────┬──────────────┬───────────────────────────┬───────────────┤
@@ -1154,6 +1386,8 @@ If the turn is tainted, External and Destructive actions do not reach this dialo
 | R-12 | Coupling to AI SDK or a specific provider | Medium | Internal ports; adapters isolated in `infrastructure`; pinned versions |
 | R-13 | Compromised npm dependency (supply-chain worm) | High | Section 6.8 controls; minimal dependencies; no install scripts; release-age delay; audit in CI |
 | R-14 | Developer less experienced in Node backend than in Java | Medium | NestJS mirrors Spring concepts; strict TypeScript; small scope; tests first |
+| R-15 | Approved action differs from executed action (TOCTOU) | High | Approval binding and re-verification at execution (9.4) |
+| R-16 | Injected instructions via file names or contents in an allowed directory | High | Content-based taint (9.3); no trusted-directory exception |
 
 ## 18. Open Decisions
 
@@ -1161,33 +1395,37 @@ If the turn is tainted, External and Destructive actions do not reach this dialo
 | ---- | -------- | --------- |
 | OD-1 | How reliably will the Windows host be online? Determines VPS timing. | Phase 3 |
 | OD-2 | Voice mode: cloud real-time, cascaded cloud, or local — decided by measurement. | Phase 5 |
-| OD-3 | Host the device MCP server inside Tauri, or as a standalone process. | Phase 3 |
+| OD-3 | Host the Mac device connector inside the Tauri app, or as a standalone background process. | Phase 3 |
 | OD-4 | Initial cloud provider and model. | Phase 1 |
-| OD-5 | Frontend framework: React (default, best AI SDK UI support) or Angular (existing expertise). | Phase 1 |
+| OD-5 | Frontend framework: React or Angular. AI SDK UI hooks alone do not justify React; existing Angular expertise lowers delivery cost. Decide before Phase 1 by building the chat screen spike in the chosen framework. | Phase 1 |
 | OD-6 | Final embedding model, from the recall test (Sec. 14.3). | Phase 2 |
 | OD-7 | Reuse an existing chat front end (e.g. Open WebUI) during early phases, or keep a minimal custom UI from the start. | Phase 1 |
 
 ## 19. Engineering Rules
 
-1. DTOs and domain models are separate types; controllers expose DTOs only.
-2. No business logic in controllers; use cases live in `application`.
-3. Constructor injection via NestJS providers only; no service locators.
-4. Every schema change is a reviewed Drizzle migration with a documented rollback.
-5. Business logic never depends directly on an AI provider, runtime or AI SDK types.
-6. Changing the model or runtime must not require changes outside the `ai` module.
-7. Security checks are never delegated to the model prompt.
-8. Model output, tool results and retrieved content are untrusted input everywhere in the code.
-9. New logic ships with tests; existing tests are not weakened.
-10. No abstraction without a second concrete use.
-11. TypeScript `strict` mode everywhere; no `any` in domain code; all external input validated with Zod at the boundary.
-12. Frontend: feature-based structure, presentational vs container components, logic in hooks/services, server state via a query library, forms with schema validation.
-13. Prefer the standard library and existing dependencies; every new dependency needs a one-line justification in the PR.
-14. Every significant architectural decision is recorded as an ADR in `docs/adr/`.
-15. AI coding assistants may modify code but must not commit, push or create branches without explicit permission. No direct pushes to `main`.
+MELL follows **[agent-playbook](https://github.com/eerenyilmazz/agent-playbook)** for company-wide engineering, security, git, documentation and review rules. They are not restated here; the playbook is the single source. The project's playbook selection and overrides are declared in the repository `README.md` (*Playbook* section), as the playbook requires.
+
+| Playbook element | MELL selection |
+| --- | --- |
+| Templates | `software`, `desktop`, `web` |
+| Roles | `backend`, `frontend`, `qa-security`, `security-reviewer`, `code-reviewer`, `decision-maker`, `technical-writer`, `devops-cloud` |
+| Precedence | User's explicit instruction → README overrides → playbook `company/` → templates → roles → skills |
+| ADR format | `templates/software/architecture-decision-record.md`; files in `docs/adr/` |
+
+MELL-specific rules that the playbook does not cover:
+
+1. Business logic never depends directly on an AI provider, runtime or AI SDK types; changing the model or runtime must not require changes outside the `ai` module.
+2. Security checks are never delegated to the model prompt.
+3. Model output, tool results, file names and contents, and retrieved memory are untrusted input everywhere in the code (9.3, 9.5).
+4. Every new tool declares its action class and whether it is `structured-only`; both are reviewed in the PR that adds it.
+5. TypeScript `strict` everywhere; no `any` in domain code; all external input validated with Zod at the boundary.
+6. Every turn-level operation carries the correlation id (6.9).
+7. The data model is changed in three places at once: the table list and ER diagram (13.1), the schema notes (10.7) and the migration.
+8. Supply-chain controls in Section 6.8 are mandatory, not advisory.
 
 ## 20. Repository Layout
 
-```
+```text
 mell-assistant/
 ├── apps/
 │   ├── backend/               NestJS modular monolith
@@ -1205,9 +1443,11 @@ mell-assistant/
 │   └── security/              prompt-injection corpus
 ├── docs/
 │   ├── PLAN.md                this document
-│   ├── adr/
+│   ├── adr/                   decision records (playbook ADR format)
+│   ├── security/              threat model
 │   └── benchmarks/
 ├── scripts/
+├── AGENTS.md                  instructions for coding agents
 ├── .npmrc                     supply-chain settings (Sec. 6.8)
 ├── pnpm-workspace.yaml
 ├── .gitignore
@@ -1218,53 +1458,59 @@ Further design documents (memory, voice, security, API) are written when their p
 
 ## 21. Initial ADRs
 
-| ADR     | Title |
-| ------- | ----- |
-| ADR-001 | TypeScript end-to-end; modular monolith on NestJS |
-| ADR-002 | PostgreSQL with pgvector as the single data store |
-| ADR-003 | First-party MCP servers for tool and device integration |
-| ADR-004 | Permission enforcement outside the model; trifecta rule |
-| ADR-005 | Explicit-only memory writes in v0.1; scoped memory |
-| ADR-006 | Manual model selection before automatic routing |
-| ADR-007 | Defer Redis, Tauri, voice and external actions beyond v0.1 |
-| ADR-008 | Authenticated localhost backend and loopback-only services |
+Recorded in `docs/adr/` using the playbook ADR format. Accepted ADRs are immutable; changes are made by superseding.
+
+| ADR | Title |
+| --- | --- |
+| 0001 | TypeScript end-to-end; modular monolith on NestJS |
+| 0002 | PostgreSQL with pgvector as the single data store |
+| 0003 | First-party MCP servers for tool and device integration |
+| 0004 | Permission enforcement outside the model; content-based taint |
+| 0005 | Explicit-only memory writes in v0.1; scoped memory |
+| 0006 | Manual model selection before automatic routing |
+| 0007 | Defer Redis, Tauri, voice and external actions beyond v0.1 |
+| 0008 | Authenticated localhost backend and loopback-only services |
+| 0009 | Device connectivity without listening ports |
+| 0010 | Bind approvals to a verified fingerprint |
 
 ## Appendix A. References
 
-- Simon Willison — *The lethal trifecta for AI agents* — https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/
-- Palo Alto Networks — *OpenClaw (formerly Moltbot, Clawdbot) May Signal the Next AI Security Crisis* — https://www.paloaltonetworks.com/blog/network-security/why-moltbot-may-signal-ai-crisis/
-- The Register — *OpenClaw security problems* — https://www.theregister.com/2026/02/03/openclaw_security_problems/
-- Security Boulevard — *OpenClaw flaw lets malicious websites hijack local AI agents* — https://securityboulevard.com/2026/03/latest-openclaw-flaw-can-let-malicious-websites-hijack-local-ai-agents/
-- TechRadar — *OpenClaw security risks* — https://www.techradar.com/pro/here-are-the-openclaw-security-risks-you-should-know-about
-- Huang et al. — *MCP Threat Modeling and Tool Poisoning* (arXiv 2603.22489) — https://arxiv.org/html/2603.22489v1
-- Elastic Security Labs — *MCP Tools: Attack Vectors and Defense Recommendations* — https://www.elastic.co/security-labs/mcp-tools-attack-defense-recommendations
-- Cisco Talos — *Detecting exposed LLM servers: Ollama* — https://blogs.cisco.com/security/detecting-exposed-llm-servers-shodan-case-study-on-ollama
-- SANS — *Your local AI server is not local* — https://www.sans.org/blog/your-local-ai-server-is-not-local-finding-exposed-ollama-hosts-without-crossing-line
-- Rapid7 — *Self-hosted AI: exposed servers* — https://rapid7.com/blog/post/tr-self-hosted-ai-renting-compute-exposed-servers
-- Ollama — *Tool calling documentation* — https://docs.ollama.com/capabilities/tool-calling
-- Ollama issue #14493 — Qwen tool-calling format mismatch — https://github.com/ollama/ollama/issues/14493
-- Strix issue #520 — qwen3:8b tool calls returned as text — https://github.com/usestrix/strix/issues/520
-- Ollama scheduling (keep-alive, max loaded models) — https://mljourney.com/ollama-keep-alive-and-model-preloading-eliminate-cold-start-latency/
-- Vercel AI SDK — *What's new in AI SDK 7* — https://www.developersdigest.tech/blog/vercel-ai-sdk-whats-new-2026
-- AI SDK — *MCP tools* — https://app.unpkg.com/ai@7.0.173/files/docs/03-ai-sdk-core/16-mcp-tools.mdx
-- ai-sdk-ollama provider — https://app.unpkg.com/ai-sdk-ollama@4.2.0/files/README.md
-- MCP blog — *2026-07-28 specification* — https://blog.modelcontextprotocol.io/posts/2026-07-28/
-- Official MCP SDKs and tiers — https://eseospace.com/blog/mcp-official-sdks/
-- LiveKit Agents vs Pipecat — https://agentpedia.codes/blog/livekit-agents-vs-pipecat
-- Tauri — *Node.js as a sidecar* — https://v2.tauri.app/learn/sidecar-nodejs/
-- Unit 42 — *Monitoring npm supply chain attacks* — https://unit42.paloaltonetworks.com/monitoring-npm-supply-chain-attacks/
-- Akamai — *Mini Shai-Hulud worm returns* — https://www.akamai.com/blog/security-research/mini-shai-hulud-worm-returns-goes-public
-- Letta — *Benchmarking AI agent memory* — https://www.letta.com/blog/benchmarking-ai-agent-memory
-- Mem0 vs Letta comparison — https://ryanalberts.github.io/best-of-Agent-Harnesses/compare/memory-layers/
-- Tom's Guide — *ChatGPT memories disappearing* — https://www.tomsguide.com/ai/chatgpt/chatgpt-memories-are-disappearing-for-some-users-heres-how-to-protect-yours
-- Axios — *ChatGPT memory update* — https://www.axios.com/2025/07/11/chatgpt-memory-update
-- The Register — *Mycroft AI killed off* — https://www.theregister.com/2023/02/13/linux_ai_assistant_killed_off/
-- OpenVoiceOS Foundation — https://www.cnx-software.com/2025/02/24/the-openvoiceos-foundation-aims-to-enable-open-source-privacy-and-customization-for-voice-assistants/
-- Home Assistant — *About wake words* — https://home-assistant.io/voice_control/about_wake_word
-- Picovoice — *Multilingual voice user interfaces* — https://picovoice.ai/blog/multilingual-voice-user-interfaces
-- Twilio — *Core latency in AI voice agents* — https://www.twilio.com/en-us/blog/developers/best-practices/guide-core-latency-ai-voice-agents
-- ElevenLabs — *Voice agent latency optimization* — https://elevenlabs.io/blog/voice-agent-latency-optimization
-- TR-MTEB (EMNLP Findings 2025) — https://preview.aclanthology.org/author-page-yu-wang-polytechnic/2025.findings-emnlp.471.pdf
-- TurkColBERT (arXiv 2511.16528) — https://arxiv.org/html/2511.16528v1
-- TurkEmbed (arXiv 2511.08376) — https://arxiv.org/pdf/2511.08376
-- Open WebUI — *Open WebUI & LibreChat* — https://docs.openwebui.com/alternatives/librechat
+- Simon Willison — *The lethal trifecta for AI agents* — <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/>
+- Palo Alto Networks — *OpenClaw (formerly Moltbot, Clawdbot) May Signal the Next AI Security Crisis* — <https://www.paloaltonetworks.com/blog/network-security/why-moltbot-may-signal-ai-crisis/>
+- The Register — *OpenClaw security problems* — <https://www.theregister.com/2026/02/03/openclaw_security_problems/>
+- Security Boulevard — *OpenClaw flaw lets malicious websites hijack local AI agents* — <https://securityboulevard.com/2026/03/latest-openclaw-flaw-can-let-malicious-websites-hijack-local-ai-agents/>
+- TechRadar — *OpenClaw security risks* — <https://www.techradar.com/pro/here-are-the-openclaw-security-risks-you-should-know-about>
+- Huang et al. — *MCP Threat Modeling and Tool Poisoning* (arXiv 2603.22489) — <https://arxiv.org/html/2603.22489v1>
+- Elastic Security Labs — *MCP Tools: Attack Vectors and Defense Recommendations* — <https://www.elastic.co/security-labs/mcp-tools-attack-defense-recommendations>
+- Cisco Talos — *Detecting exposed LLM servers: Ollama* — <https://blogs.cisco.com/security/detecting-exposed-llm-servers-shodan-case-study-on-ollama>
+- SANS — *Your local AI server is not local* — <https://www.sans.org/blog/your-local-ai-server-is-not-local-finding-exposed-ollama-hosts-without-crossing-line>
+- Rapid7 — *Self-hosted AI: exposed servers* — <https://rapid7.com/blog/post/tr-self-hosted-ai-renting-compute-exposed-servers>
+- Ollama — *Tool calling documentation* — <https://docs.ollama.com/capabilities/tool-calling>
+- Ollama issue #14493 — Qwen tool-calling format mismatch — <https://github.com/ollama/ollama/issues/14493>
+- Strix issue #520 — qwen3:8b tool calls returned as text — <https://github.com/usestrix/strix/issues/520>
+- Ollama scheduling (keep-alive, max loaded models) — <https://mljourney.com/ollama-keep-alive-and-model-preloading-eliminate-cold-start-latency/>
+- Vercel AI SDK — *What's new in AI SDK 7* — <https://www.developersdigest.tech/blog/vercel-ai-sdk-whats-new-2026>
+- AI SDK — *MCP tools* — <https://app.unpkg.com/ai@7.0.173/files/docs/03-ai-sdk-core/16-mcp-tools.mdx>
+- ai-sdk-ollama provider — <https://app.unpkg.com/ai-sdk-ollama@4.2.0/files/README.md>
+- MCP blog — *2026-07-28 specification* — <https://blog.modelcontextprotocol.io/posts/2026-07-28/>
+- Official MCP SDKs and tiers — <https://eseospace.com/blog/mcp-official-sdks/>
+- LiveKit Agents vs Pipecat — <https://agentpedia.codes/blog/livekit-agents-vs-pipecat>
+- Tauri — *Node.js as a sidecar* — <https://v2.tauri.app/learn/sidecar-nodejs/>
+- Unit 42 — *Monitoring npm supply chain attacks* — <https://unit42.paloaltonetworks.com/monitoring-npm-supply-chain-attacks/>
+- Akamai — *Mini Shai-Hulud worm returns* — <https://www.akamai.com/blog/security-research/mini-shai-hulud-worm-returns-goes-public>
+- Letta — *Benchmarking AI agent memory* — <https://www.letta.com/blog/benchmarking-ai-agent-memory>
+- Mem0 vs Letta comparison — <https://ryanalberts.github.io/best-of-Agent-Harnesses/compare/memory-layers/>
+- Tom's Guide — *ChatGPT memories disappearing* — <https://www.tomsguide.com/ai/chatgpt/chatgpt-memories-are-disappearing-for-some-users-heres-how-to-protect-yours>
+- Axios — *ChatGPT memory update* — <https://www.axios.com/2025/07/11/chatgpt-memory-update>
+- The Register — *Mycroft AI killed off* — <https://www.theregister.com/2023/02/13/linux_ai_assistant_killed_off/>
+- OpenVoiceOS Foundation — <https://www.cnx-software.com/2025/02/24/the-openvoiceos-foundation-aims-to-enable-open-source-privacy-and-customization-for-voice-assistants/>
+- Home Assistant — *About wake words* — <https://home-assistant.io/voice_control/about_wake_word>
+- Picovoice — *Multilingual voice user interfaces* — <https://picovoice.ai/blog/multilingual-voice-user-interfaces>
+- Twilio — *Core latency in AI voice agents* — <https://www.twilio.com/en-us/blog/developers/best-practices/guide-core-latency-ai-voice-agents>
+- ElevenLabs — *Voice agent latency optimization* — <https://elevenlabs.io/blog/voice-agent-latency-optimization>
+- TR-MTEB (EMNLP Findings 2025) — <https://preview.aclanthology.org/author-page-yu-wang-polytechnic/2025.findings-emnlp.471.pdf>
+- TurkColBERT (arXiv 2511.16528) — <https://arxiv.org/html/2511.16528v1>
+- TurkEmbed (arXiv 2511.08376) — <https://arxiv.org/pdf/2511.08376>
+- Open WebUI — *Open WebUI & LibreChat* — <https://docs.openwebui.com/alternatives/librechat>
+- PostgreSQL — *Text search: psql support (built-in snowball stemmers incl. `turkish_stem`)* — <https://www.postgresql.org/docs/18/textsearch-psql.html>
+- agent-playbook — project rule library this repository follows — <https://github.com/eerenyilmazz/agent-playbook>
