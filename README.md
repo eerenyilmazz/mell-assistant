@@ -135,6 +135,43 @@ mell-assistant/
 └── docs/               Plan, ADRs, benchmarks
 ```
 
+## Run
+
+Not runnable yet. Commands for local start, tests and required environment variables are added here in Phase 0 ([plan](docs/PLAN.md#phase-0--foundation)).
+
+## Owner
+
+Eren ([@eerenyilmazz](https://github.com/eerenyilmazz))
+
+## Playbook
+
+This project follows [agent-playbook](https://github.com/eerenyilmazz/agent-playbook). Agents and contributors load its rules as described in [`AGENTS.md`](AGENTS.md).
+
+- Templates: software, desktop, web
+- Roles: backend, frontend, qa-security, security-reviewer, code-reviewer, decision-maker, technical-writer, devops-cloud
+- Stack: TypeScript (strict) on Node.js LTS · NestJS · Drizzle · PostgreSQL + pgvector · Vercel AI SDK · MCP TypeScript SDK · React or Angular (OD-5) · Tauri 2
+
+### Overrides
+
+Only values that differ from the playbook defaults.
+
+| Rule | Default | This project | Reason |
+| --- | --- | --- | --- |
+| API p95 read latency | 300 ms | 300 ms, but chat is measured as time-to-first-token (baseline set in Phase 1) | Streaming responses; total duration depends on answer length |
+| API p95 write latency | 800 ms | 800 ms, excluding model calls | Model latency is tracked separately per model |
+| Browser matrix | latest 2 majors | WebView2 (Windows) and WKWebView (macOS) via Tauri; latest Chrome for development | Desktop shell, single user |
+| Sprint length | 1–2 weeks | No sprints; phase-based delivery with exit criteria | Single developer, part-time |
+| Release watch window | 60 min | Not applicable until a packaged release exists | No production deployment |
+| Severity response times | Sev1 now / Sev2 1 h / Sev3 next day | Best effort | Personal project |
+
+### Out of scope
+
+See [Non-Goals](docs/PLAN.md#42-non-goals-v01): microservices, model training, third-party plugins or MCP servers, messaging-channel integrations, unattended destructive or external actions.
+
+## Contributing
+
+Pull requests only; `main` is protected. Read [`CONTRIBUTING.md`](CONTRIBUTING.md). Decisions are recorded in [`docs/adr/`](docs/adr/). Report vulnerabilities as described in [`SECURITY.md`](SECURITY.md).
+
 ## Security
 
 MELL is designed to hold personal data and act on the user's machines, so its security model is part of the core design rather than an add-on. The threat model, the trifecta rule, MCP tool-definition pinning, network binding rules and supply-chain controls are described in the plan ([Sections 9](docs/PLAN.md#9-tools-and-permission-model), [12](docs/PLAN.md#12-security-and-privacy) and [6.8](docs/PLAN.md#68-supply-chain-controls)).
