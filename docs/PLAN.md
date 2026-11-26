@@ -2,10 +2,11 @@
 
 | Field         | Value                                                |
 | ------------- | ---------------------------------------------------- |
-| Status        | Draft v0.5 — for review                              |
+| Status        | Draft v0.5.1 — for review                            |
 | Owner         | Eren                                                 |
 | Last updated  | 2026-11-26                                           |
 | Document type | Plan (no implementation in this phase)               |
+| Changes v0.5.1 | Read-tool size and count limits (9.7); threat model linked from Section 12. See `CHANGELOG.md` for earlier versions |
 | Changes v0.5  | Fixes from external review of v0.4: device connectivity without listening ports (6.3), turn pipeline and cross-cutting concerns (6.5, 6.9), content-based taint (9.3), approval binding against TOCTOU (9.4), hybrid memory retrieval (10.9), consistent voice budget (11.2), data model aligned with ER diagram (13.1); project now follows `agent-playbook` (19) |
 
 ---
@@ -693,6 +694,8 @@ stateDiagram-v2
 - `filesystem.list`, `filesystem.read` — restricted to explicitly configured directories.
 - `system.status` — CPU, memory, GPU utilisation.
 
+Every read tool enforces limits per call — maximum bytes read, maximum entries listed and maximum directory depth — and marks a truncated result as truncated, so a large file or folder cannot flood the context or the model's budget.
+
 ## 10. Memory Design
 
 ### 10.1 Memory Types
@@ -897,6 +900,8 @@ Each state has a distinct visual indicator in the UI; `Muted` is always reachabl
 Every voice turn is traced with one span per stage. Providers (cloud real-time, cascaded cloud, local) are selected by measured Turkish word error rate, latency and barge-in response time — not by voice quality alone. Decision recorded as an ADR; mode tracked as OD-2.
 
 ## 12. Security and Privacy
+
+Threats, the mitigations below and the tests that verify them are tracked in [`security/threat-model.md`](security/threat-model.md).
 
 1. **Network binding:** Ollama and PostgreSQL bind to `127.0.0.1` only. Device MCP servers open **no listening port** at all (stdio on the host, outbound connector on other devices, Section 6.3). The backend binds to loopback and, when cross-device access is enabled, to the private-network interface only. A startup self-check refuses to run if any service is bound to a public interface.
 2. **Local endpoint authentication:** the backend requires authentication even on localhost, validates `Origin`/`Host` headers, and exposes no unauthenticated WebSocket or SSE endpoint. This prevents malicious web pages in the user's browser from driving the local agent.

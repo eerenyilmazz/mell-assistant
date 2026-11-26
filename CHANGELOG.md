@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - Project governance: `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, pull request template, code owners, documentation index and glossary.
 - Markdown lint and link checks in CI.
+- Threat model: assets, adversaries, trust boundaries, STRIDE per boundary, OWASP Agentic Top 10 mapping, abuse cases and security tests.
+- Plan v0.5.1: size, count and depth limits for read tools (Section 9.7); Section 12 links to the threat model.
 - README sections required by agent-playbook: Run, Owner, Playbook, Overrides, Out of scope.
 
 ## [plan-v0.4] - 2026-11-26

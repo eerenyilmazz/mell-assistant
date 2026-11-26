@@ -30,4 +30,4 @@ Out of scope:
 
 ## Design principles
 
-MELL treats model output, tool results, file names and contents, and retrieved memory as untrusted, and enforces permissions in deterministic code outside the model. Details: [`docs/PLAN.md` Section 12](docs/PLAN.md#12-security-and-privacy).
+MELL treats model output, tool results, file names and contents, and retrieved memory as untrusted, and enforces permissions in deterministic code outside the model. Details: [`docs/PLAN.md` Section 12](docs/PLAN.md#12-security-and-privacy). Threats, mitigations and the tests that verify them: [`docs/security/threat-model.md`](docs/security/threat-model.md).
