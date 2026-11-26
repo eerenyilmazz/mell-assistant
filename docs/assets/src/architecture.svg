@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="660" viewBox="0 0 1280 660" role="img" aria-labelledby="t d">
+  <title id="t">Mell architecture</title>
+  <desc id="d">The Windows host runs the UI, the NestJS backend with turn orchestrator, permission engine, memory, AI ports and activity log, plus Ollama, PostgreSQL and the host MCP server over stdio. The Mac runs a UI client and a device connector that connects outbound to the backend over a private network; no device opens a listening port. A cloud model is optional, policy-filtered and spend-capped.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1L9 5L0 9" fill="none" stroke="#A39E93" stroke-width="1.6"/></marker>
+    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1L9 5L0 9" fill="none" stroke="#FF5A1F" stroke-width="1.6"/></marker>
+  </defs>
+  <style>
+    .serif { font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif; }
+    .sans  { font-family: 'Instrument Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
+    .mono  { font-family: 'Geist Mono', 'SF Mono', Consolas, 'Liberation Mono', monospace; }
+    .t1 { fill: #EEEAE2; } .t2 { fill: #A39E93; } .t3 { fill: #6E6A62; } .acc { fill: #FF5A1F; }
+    .box { fill: #161513; stroke: #3A3733; }
+    .h { font-size: 17px; font-weight: 600; }
+    .s { font-size: 13.5px; }
+    .lbl { font-size: 11px; letter-spacing: 1.4px; }
+  </style>
+  <rect width="1280" height="660" rx="14" fill="#111110"/>
+
+  <!-- zones -->
+  <text x="48" y="52" class="mono t3 lbl">WINDOWS HOST · PRIMARY</text>
+  <path d="M48 64H840" stroke="#2A2825"/>
+  <text x="888" y="52" class="mono t3 lbl">MACBOOK AIR</text>
+  <path d="M888 64H1232" stroke="#2A2825"/>
+  <text x="888" y="394" class="mono t3 lbl">OPTIONAL</text>
+  <path d="M888 406H1232" stroke="#2A2825"/>
+
+  <!-- UI -->
+  <rect x="48" y="88" width="240" height="72" rx="8" class="box"/>
+  <text x="68" y="118" class="sans t1 h">Interface</text>
+  <text x="68" y="142" class="mono t2 s">Svelte 5 · Tauri</text>
+
+  <!-- backend -->
+  <rect x="48" y="210" width="792" height="206" rx="10" fill="#141311" stroke="#EEEAE2" stroke-opacity="0.55"/>
+  <text x="72" y="246" class="serif t1" style="font-size:30px">Backend</text>
+  <text x="190" y="244" class="mono t3" style="font-size:12px">NestJS modular monolith · TypeScript strict</text>
+  <g class="sans" style="font-size:14.5px">
+    <rect x="72"  y="270" width="140" height="64" rx="6" class="box"/>
+    <text x="88"  y="298" class="t1">Turn</text><text x="88" y="318" class="t1">orchestrator</text>
+    <rect x="224" y="270" width="140" height="64" rx="6" fill="#1B1210" stroke="#FF5A1F"/>
+    <text x="240" y="298" class="t1">Permission</text><text x="240" y="318" class="t1">engine</text>
+    <rect x="376" y="270" width="140" height="64" rx="6" class="box"/>
+    <text x="392" y="298" class="t1">Memory</text><text x="392" y="318" class="t2">scoped · hybrid</text>
+    <rect x="528" y="270" width="140" height="64" rx="6" class="box"/>
+    <text x="544" y="298" class="t1">Model ports</text><text x="544" y="318" class="t2">AI SDK</text>
+    <rect x="680" y="270" width="136" height="64" rx="6" class="box"/>
+    <text x="696" y="298" class="t1">Activity log</text><text x="696" y="318" class="t2">append-only</text>
+  </g>
+  <text x="72" y="368" class="mono t2" style="font-size:12.5px">Every turn: correlation id · idempotency key · cancellable · taint-tracked</text>
+  <text x="72" y="392" class="mono t3" style="font-size:12.5px">Model output, files and web content are data — never instructions</text>
+
+  <!-- bottom row -->
+  <g>
+    <rect x="48" y="478" width="248" height="92" rx="8" class="box"/>
+    <text x="68" y="510" class="sans t1 h">Ollama</text>
+    <text x="68" y="534" class="mono t2 s">local models</text>
+    <text x="68" y="554" class="mono t3 s">127.0.0.1 only</text>
+    <rect x="320" y="478" width="248" height="92" rx="8" class="box"/>
+    <text x="340" y="510" class="sans t1 h">PostgreSQL</text>
+    <text x="340" y="534" class="mono t2 s">pgvector · turkish FTS</text>
+    <text x="340" y="554" class="mono t3 s">127.0.0.1 only</text>
+    <rect x="592" y="478" width="248" height="92" rx="8" class="box"/>
+    <text x="612" y="510" class="sans t1 h">Host tools</text>
+    <text x="612" y="534" class="mono t2 s">MCP over stdio</text>
+    <text x="612" y="554" class="mono t3 s">no listening port</text>
+  </g>
+
+  <!-- host arrows -->
+  <path d="M168 160V204" stroke="#A39E93" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="180" y="188" class="mono t3 lbl">HTTPS · SSE · SESSION</text>
+  <path d="M172 416V472" stroke="#A39E93" stroke-width="1.5" marker-end="url(#a)"/>
+  <path d="M444 416V472" stroke="#A39E93" stroke-width="1.5" marker-end="url(#a)"/>
+  <path d="M716 416V472" stroke="#A39E93" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="184" y="450" class="mono t3 lbl">LOOPBACK</text>
+  <text x="456" y="450" class="mono t3 lbl">LOOPBACK</text>
+  <text x="728" y="450" class="mono t3 lbl">STDIO</text>
+
+  <!-- mac -->
+  <rect x="888" y="88" width="344" height="72" rx="8" class="box"/>
+  <text x="908" y="118" class="sans t1 h">Interface</text>
+  <text x="908" y="142" class="mono t2 s">same app, remote session</text>
+  <rect x="888" y="184" width="344" height="112" rx="8" class="box"/>
+  <text x="908" y="214" class="sans t1 h">Device connector</text>
+  <text x="908" y="238" class="mono t2 s">Mac tools · local allow-list</text>
+  <text x="908" y="262" class="mono t3 s">outbound only · device-authenticated</text>
+  <text x="908" y="282" class="mono t3 s">no listening port</text>
+  <text x="888" y="324" class="mono t3 lbl">PRIVATE NETWORK · TAILSCALE / WIREGUARD</text>
+
+  <path d="M888 124H860V260H846" stroke="#A39E93" stroke-width="1.5" stroke-dasharray="6 5" fill="none" marker-end="url(#a)"/>
+  <path d="M888 240H872V312H846" stroke="#A39E93" stroke-width="1.5" stroke-dasharray="6 5" fill="none" marker-end="url(#a)"/>
+
+  <!-- cloud -->
+  <rect x="888" y="426" width="344" height="100" rx="8" class="box"/>
+  <text x="908" y="458" class="sans t1 h">Cloud model</text>
+  <text x="908" y="482" class="mono t2 s">opt-in · policy-filtered</text>
+  <text x="908" y="502" class="mono t3 s">sensitive data never sent · spend cap</text>
+  <path d="M840 380H864V476H882" stroke="#FF5A1F" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round" fill="none" marker-end="url(#o)"/>
+
+  <!-- legend -->
+  <path d="M48 610H1232" stroke="#2A2825"/>
+  <g class="mono t3" style="font-size:11.5px">
+    <path d="M48 634H84" stroke="#A39E93" stroke-width="1.5"/><text x="94" y="638">local</text>
+    <path d="M170 634H206" stroke="#A39E93" stroke-width="1.5" stroke-dasharray="6 5"/><text x="216" y="638">private network</text>
+    <path d="M372 634H408" stroke="#FF5A1F" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/><text x="418" y="638">external, opt-in</text>
+    <rect x="566" y="626" width="16" height="16" rx="3" fill="#1B1210" stroke="#FF5A1F"/><text x="592" y="638">decides every action</text>
+    <text x="1232" y="638" text-anchor="end">Only the backend listens on the network</text>
+  </g>
+</svg>

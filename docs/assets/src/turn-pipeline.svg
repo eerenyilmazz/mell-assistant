@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-labelledby="t d">
+  <title id="t">Mell turn pipeline</title>
+  <desc id="d">Seven stages for every input: intake, context, generate, policy, execute, respond, record. Tool proposals loop from generate through policy and execute back to generate; results return as untrusted data.</desc>
+  <style>
+    .serif { font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif; }
+    .sans  { font-family: 'Instrument Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
+    .mono  { font-family: 'Geist Mono', 'SF Mono', Consolas, 'Liberation Mono', monospace; }
+    .t1 { fill: #EEEAE2; } .t2 { fill: #A39E93; } .t3 { fill: #6E6A62; } .acc { fill: #FF5A1F; }
+    .n { font-size: 12px; letter-spacing: 1.4px; }
+    .h { font-size: 26px; }
+    .s { font-size: 13.5px; }
+  </style>
+  <rect width="1280" height="300" rx="14" fill="#111110"/>
+  <text x="48" y="48" class="mono t3" style="font-size:11px;letter-spacing:1.6px">ONE TURN = ONE INPUT</text>
+  <path d="M48 70H1232" stroke="#2A2825"/>
+
+  <!-- columns at x = 48 + i*172 -->
+  <g>
+    <text x="48"  y="104" class="mono t3 n">01</text><text x="48"  y="140" class="serif t1 h">Intake</text>
+    <text x="48"  y="166" class="sans t2 s">auth, correlation id,</text><text x="48" y="186" class="sans t2 s">idempotency key</text>
+
+    <text x="220" y="104" class="mono t3 n">02</text><text x="220" y="140" class="serif t1 h">Context</text>
+    <text x="220" y="166" class="sans t2 s">history, memory,</text><text x="220" y="186" class="sans t2 s">taint per block</text>
+
+    <text x="392" y="104" class="mono t3 n">03</text><text x="392" y="140" class="serif t1 h">Generate</text>
+    <text x="392" y="166" class="sans t2 s">model with allowed</text><text x="392" y="186" class="sans t2 s">tools, max 4 steps</text>
+
+    <text x="564" y="104" class="mono acc n">04</text><text x="564" y="140" class="serif t1 h">Policy</text>
+    <text x="564" y="166" class="sans t2 s">allow, deny or</text><text x="564" y="186" class="sans t2 s">bound approval</text>
+    <rect x="564" y="76" width="140" height="2" fill="#FF5A1F"/>
+
+    <text x="736" y="104" class="mono t3 n">05</text><text x="736" y="140" class="serif t1 h">Execute</text>
+    <text x="736" y="166" class="sans t2 s">tool call on the</text><text x="736" y="186" class="sans t2 s">target device</text>
+
+    <text x="908" y="104" class="mono t3 n">06</text><text x="908" y="140" class="serif t1 h">Respond</text>
+    <text x="908" y="166" class="sans t2 s">stream to the UI,</text><text x="908" y="186" class="sans t2 s">cancellable</text>
+
+    <text x="1080" y="104" class="mono t3 n">07</text><text x="1080" y="140" class="serif t1 h">Record</text>
+    <text x="1080" y="166" class="sans t2 s">messages, usage,</text><text x="1080" y="186" class="sans t2 s">audit, candidates</text>
+  </g>
+  <g stroke="#2A2825"><path d="M206 96V196M378 96V196M550 96V196M722 96V196M894 96V196M1066 96V196"/></g>
+
+  <!-- loop -->
+  <path d="M800 210V246H456V214" fill="none" stroke="#FF5A1F" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <path d="M451 220L456 212L461 220" fill="none" stroke="#FF5A1F" stroke-width="1.5"/>
+  <text x="628" y="272" text-anchor="middle" class="mono t2" style="font-size:12px">tool loop · results return as untrusted data and may taint the turn</text>
+</svg>

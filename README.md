@@ -1,22 +1,22 @@
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="MELL — personal AI assistant platform" width="100%">
+  <img src="docs/assets/banner.svg" alt="Mell — remembers responsibly, acts only with permission" width="100%">
 </p>
 
 <p align="center">
-  <a href="docs/PLAN.md"><img src="https://img.shields.io/badge/status-planning-f59e0b?style=for-the-badge" alt="Status: planning"></a>
-  <a href="docs/PLAN.md"><img src="https://img.shields.io/badge/plan-v0.5.2-3b82f6?style=for-the-badge" alt="Plan v0.5.2"></a>
-  <a href="docs/adr/"><img src="https://img.shields.io/badge/ADRs-11-8b5cf6?style=for-the-badge" alt="11 decision records"></a>
-  <a href="https://github.com/eerenyilmazz/mell-assistant/actions/workflows/docs.yml"><img src="https://github.com/eerenyilmazz/mell-assistant/actions/workflows/docs.yml/badge.svg" alt="Docs CI" height="28"></a>
+  <a href="docs/PLAN.md"><img src="https://img.shields.io/badge/status-planning-FF5A1F?style=flat-square&labelColor=111110" alt="Status: planning"></a>
+  <a href="docs/PLAN.md"><img src="https://img.shields.io/badge/plan-v0.5.3-EEEAE2?style=flat-square&labelColor=111110" alt="Plan v0.5.3"></a>
+  <a href="docs/adr/"><img src="https://img.shields.io/badge/decisions-11_ADRs-EEEAE2?style=flat-square&labelColor=111110" alt="11 decision records"></a>
+  <a href="https://github.com/eerenyilmazz/mell-assistant/actions/workflows/docs.yml"><img src="https://github.com/eerenyilmazz/mell-assistant/actions/workflows/docs.yml/badge.svg" alt="Docs CI"></a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
-  <img src="https://img.shields.io/badge/NestJS-backend-E0234E?style=flat-square&logo=nestjs&logoColor=white" alt="NestJS">
-  <img src="https://img.shields.io/badge/Svelte_5-UI-FF3E00?style=flat-square&logo=svelte&logoColor=white" alt="Svelte 5">
-  <img src="https://img.shields.io/badge/Tauri_2-desktop-24C8DB?style=flat-square&logo=tauri&logoColor=white" alt="Tauri 2">
-  <img src="https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL with pgvector">
-  <img src="https://img.shields.io/badge/Ollama-local_models-000000?style=flat-square&logo=ollama&logoColor=white" alt="Ollama">
-  <img src="https://img.shields.io/badge/MCP-2026--07--28-6E56CF?style=flat-square" alt="MCP 2026-07-28">
+  <img src="https://img.shields.io/badge/TypeScript-strict-1B1A18?style=flat-square&logo=typescript&logoColor=EEEAE2&labelColor=111110" alt="TypeScript">
+  <img src="https://img.shields.io/badge/NestJS-backend-1B1A18?style=flat-square&logo=nestjs&logoColor=EEEAE2&labelColor=111110" alt="NestJS">
+  <img src="https://img.shields.io/badge/Svelte_5-UI-1B1A18?style=flat-square&logo=svelte&logoColor=EEEAE2&labelColor=111110" alt="Svelte 5">
+  <img src="https://img.shields.io/badge/Tauri_2-desktop-1B1A18?style=flat-square&logo=tauri&logoColor=EEEAE2&labelColor=111110" alt="Tauri 2">
+  <img src="https://img.shields.io/badge/PostgreSQL-pgvector-1B1A18?style=flat-square&logo=postgresql&logoColor=EEEAE2&labelColor=111110" alt="PostgreSQL with pgvector">
+  <img src="https://img.shields.io/badge/Ollama-local-1B1A18?style=flat-square&logo=ollama&logoColor=EEEAE2&labelColor=111110" alt="Ollama">
+  <img src="https://img.shields.io/badge/MCP-2026--07--28-1B1A18?style=flat-square&labelColor=111110" alt="MCP 2026-07-28">
 </p>
 
 <h3 align="center">A local-first personal AI assistant that remembers responsibly<br>and acts on your computers only with permission.</h3>
@@ -40,13 +40,13 @@
 Most assistants either forget everything or remember things you never asked them to, and agents that can touch your files tend to trust whatever text they read. MELL is designed around the opposite defaults.
 
 <p align="center">
-  <img src="docs/assets/features.svg" alt="Governed memory, permission-gated actions, Turkish-first and local-first" width="100%">
+  <img src="docs/assets/features.svg" alt="Three principles: governed memory, permission first, local and Turkish-first" width="100%">
 </p>
 
 <p align="center">
-  <img src="docs/assets/ui-preview.svg" alt="Concept mockup of the MELL chat screen with memory chips, a tainted turn, a blocked delete and an approval card" width="100%">
+  <img src="docs/assets/ui-preview.svg" alt="Concept of the Mell command surface: an editorial thread with tool receipts, a delete blocked by policy and an approval bound to launching IntelliJ IDEA; a context column with memory in use, system, devices and safeguards; a command bar in listening state" width="100%">
   <br>
-  <sub><i>Concept mockup of the planned chat screen — memory you can undo, tool calls you can see, a delete blocked by policy and an approval bound to its exact target.</i></sub>
+  <sub><i>Concept of the command surface — what you asked, what Mell did, and the one decision it needs from you.</i></sub>
 </p>
 
 ## Architecture
