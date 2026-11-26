@@ -2,10 +2,11 @@
 
 | Field         | Value                                                |
 | ------------- | ---------------------------------------------------- |
-| Status        | Draft v0.5.3 — for review                            |
+| Status        | Draft v0.6 — for review                              |
 | Owner         | Eren                                                 |
 | Last updated  | 2026-11-26                                           |
 | Document type | Plan (no implementation in this phase)               |
+| Changes v0.6  | Open-ended capabilities: capability packs, catalog and Control action class (9.8, 9.2, ADR 0012); phases 3–4 re-scoped; `capabilities` table |
 | Changes v0.5.3 | UI design direction: calm command surface with an editorial thread and context column; design tokens; anti-patterns to avoid (16, 16.6) |
 | Changes v0.5.2 | Frontend decided: Svelte 5 (OD-5 closed, ADR 0011); streaming-rendering rules for the chat UI (16.0) |
 | Changes v0.5.1 | Read-tool size and count limits (9.7); threat model linked from Section 12. See `CHANGELOG.md` for earlier versions |
@@ -33,8 +34,9 @@ Mature open-source chat front ends for local models already exist (see Section 3
 1. **Governed memory** — every fact has a source, a confirmation state, a validity window and a scope; the user can inspect, export and delete all of it.
 2. **Permissioned device actions** — actions on the user's machines are decided by a deterministic policy engine outside the model, with full audit.
 3. **Turkish-first interaction** — model, embedding and voice choices are evaluated on Turkish, not assumed from English benchmarks.
+4. **Open-ended capabilities** — the user can ask for anything ("play something on Spotify", "open this YouTube video", "open my project in IntelliJ"); new abilities are added as capability packs without changing the core or the interface (9.8).
 
-Work that does not serve one of these three is a candidate for reuse rather than custom implementation.
+Work that does not serve one of these four is a candidate for reuse rather than custom implementation.
 
 ## 3. Prior Art and Lessons Learned
 
@@ -536,6 +538,7 @@ The model **proposes**; the **Permission Engine decides**. Security never depend
 | ----------- | -------------------------------------------- | ----------------------------------- |
 | Read        | List files, read file, system status         | Automatic within granted scope      |
 | Launch      | Open an application, open a URL              | Automatic if pre-approved, else ask |
+| Control     | Play, pause, skip, volume, switch window — state changes in the user's own apps and accounts with structured parameters | Automatic if pre-approved; free-text parameters follow 9.8 |
 | Write       | Create or modify a file                      | Ask, unless scope pre-approved      |
 | Destructive | Delete, move outside scope, overwrite        | Explicit approval, every time       |
 | External    | Send email/message, upload, HTTP to third party, open URL with data in it | Explicit approval, every time |
@@ -713,6 +716,66 @@ stateDiagram-v2
 - `system.status` — CPU, memory, GPU utilisation.
 
 Every read tool enforces limits per call — maximum bytes read, maximum entries listed and maximum directory depth — and marks a truncated result as truncated, so a large file or folder cannot flood the context or the model's budget.
+
+### 9.8 Capabilities — Ask for Anything
+
+MELL is meant to handle whatever the user asks — "Spotify'dan müzik aç", "YouTube'da şu videoyu aç", "IntelliJ'de MELL projesini aç", "sesi kıs", "yarın 9'a hatırlatma kur". The core does not know about Spotify or YouTube; it knows about **capabilities**.
+
+A **capability pack** is a first-party MCP server (or a set of tools inside one) that declares:
+
+| Field | Example (media pack) |
+| --- | --- |
+| Tools | `media.play(query)`, `media.pause()`, `media.next()`, `media.volume(level)`, `youtube.open(url)` |
+| Action class per tool | `pause/next/volume` → Control; `youtube.open` → Launch; `media.play(query)` → Control with free text |
+| Output schema and taint | Structured-only (no taint) or free-text (taints the turn), per 9.3 |
+| Credentials | OAuth tokens in the OS secret store, referenced by id; never in the database or prompts |
+| Devices | Where it can run (host, Mac, both) |
+| Phase | When it ships |
+
+Adding an ability means adding or extending a pack, pinning its tool definitions (9.6) and reviewing its action classes in the PR (19). The interface does not change; the thread shows receipts for whatever ran.
+
+#### Catalog (initial, open-ended)
+
+| Area | Examples | Classes | Phase |
+| --- | --- | --- | --- |
+| System status | CPU, GPU, memory, battery | Read (structured) | 2 |
+| Files | list, read · create, move · delete | Read · Write · Destructive | 2 · 4 · 6 |
+| Apps and URLs | open IntelliJ with a project, open a URL or file, switch window | Launch · Control | 3 |
+| System controls | volume, mute, brightness, media keys, lock screen | Control | 3 |
+| Media | Spotify play/pause/next/search, YouTube open, current track | Control · Launch | 4 |
+| Web | search, open and read pages | Read (taints) | 4 |
+| Developer | open repo, `git status`, run a named script | Launch · Read · Write | 4 |
+| Reminders and timers | set, list, cancel | Write | 6 |
+| Calendar and mail | read agenda · send mail | Read · External | 6 |
+| Smart home | lights, plugs, scenes | Control | later |
+| Anything else | new packs as needs appear | declared per tool | — |
+
+#### Free-text parameters
+
+Control tools are low-risk because they change state in the user's own apps. A free-text parameter (a Spotify search, a YouTube query) is different: it leaves the machine and could carry data out. Therefore:
+
+- In a **clean** turn, a pre-approved Control tool may send free text up to 120 characters.
+- In a **tainted** turn, any free-text parameter sent to a third party is treated as External and is blocked in v0.x (9.3). Structured Control calls (pause, next, volume) remain allowed.
+
+#### Worked examples
+
+| Request | What runs | Policy |
+| --- | --- | --- |
+| "Spotify'dan biraz lo-fi aç" | `media.play("lo-fi")` on the host | Control, free text, clean turn → automatic once the media pack is pre-approved |
+| "Şu YouTube videosunu aç" + link | `youtube.open(url)` in the default browser | Launch → automatic if pre-approved |
+| "Bu PDF'teki şarkıyı çal" | read PDF (taints) → `media.play(<text from PDF>)` | Free text in a tainted turn → blocked; the user can say the song name, which starts a clean turn |
+| "Sesi yarıya indir" | `system.volume(50)` | Control, structured → automatic |
+
+#### Provider constraints (checked 2026-11)
+
+| Provider | Constraint | Design response |
+| --- | --- | --- |
+| Spotify Web API | Since February 2026, Development Mode requires the app owner to have Premium, allows one client ID per developer and up to five authorised users, and limits endpoints. | Sufficient for a single-user assistant; playback control needs Premium. Fallback: OS media controls and opening Spotify URIs in the desktop app. |
+| YouTube Data API | Default quota allows 100 `search.list` calls per day. | Opening a video needs no API (Launch a URL). Search uses the API sparingly with caching, or opens the YouTube search page instead. |
+
+#### Choosing tools per turn
+
+With many packs, sending every tool to a small local model hurts tool-call reliability (7.4). Stage 3 of the turn pipeline therefore selects a small set of relevant tools per turn (by embedding the request against tool descriptions) and always includes core tools; the selection is logged with the turn.
 
 ## 10. Memory Design
 
@@ -949,6 +1012,7 @@ Threats, the mitigations below and the tests that verify them are tracked in [`s
 | `memory_entries`    | 2     | Memory facts with embedding, full-text vector and lifecycle fields |
 | `memory_sources`    | 2     | Provenance of each memory entry |
 | `devices`           | 2     | Registered devices; the host is the first device |
+| `capabilities`      | 3     | Installed capability packs, enabled state, credential reference |
 | `tool_definitions`  | 2     | Pinned MCP tool definitions per device |
 | `tool_permissions`  | 2     | Policy per tool: action class, allowed scope, auto-approve |
 | `approval_requests` | 2     | Approvals with their binding (9.4) |
@@ -973,6 +1037,7 @@ erDiagram
     memory_entries ||--o{ memory_sources : "sourced from"
     memory_entries |o--o| memory_entries : "superseded_by"
     devices ||--o{ tool_definitions : exposes
+    capabilities ||--o{ tool_definitions : groups
     tool_definitions ||--|| tool_permissions : "governed by"
     tool_definitions ||--o{ approval_requests : "requested for"
     devices ||--o{ approval_requests : targets
@@ -1073,16 +1138,25 @@ erDiagram
     tool_definitions {
         uuid id PK
         uuid device_id FK
+        uuid capability_id FK
         string name
         string definition_hash
         boolean structured_only
         string status "pending|active|disabled|revoked"
         timestamp approved_at
     }
+    capabilities {
+        uuid id PK
+        string name
+        string version
+        boolean enabled
+        string credential_ref "OS secret store key"
+        timestamp installed_at
+    }
     tool_permissions {
         uuid id PK
         uuid tool_definition_id FK
-        string action_class "read|launch|write|destructive|external|financial"
+        string action_class "read|launch|control|write|destructive|external|financial"
         json allowed_scope
         boolean auto_approve
     }
@@ -1255,17 +1329,19 @@ Phases 0–2 (highlighted) make up v0.1. No phase after Phase 2 starts until the
 - Tauri 2 packaging for Windows and macOS.
 - Private network; device registry and authentication.
 - First-party Mac MCP server; routing by target device.
+- Capability packs: apps and URLs, system controls (Control class); `capabilities` table and per-pack pre-approval.
 - Host-offline handling in the client; tested restore from backup.
 
 **Exit:** from the Mac, the user can chat and run an allowed tool on both machines; the Mac opens no listening port (verified with a port scan); a revoked device cannot reconnect; an offline host produces a clear status.
 
-### Phase 4 — Assisted Memory and Routing
+### Phase 4 — Capabilities, Assisted Memory and Routing
 
+- Capability packs: media (Spotify, YouTube, OS media controls), web, developer; per-turn tool selection (9.8).
 - Automatic candidate extraction with review queue; episodic and procedural memory.
 - Rule-based routing; optional additional local models after benchmarking.
 - Write-class tools with approval.
 
-**Exit:** candidates never used before confirmation; routing decisions logged and overridable; memory thresholds still met.
+**Exit:** "play music on Spotify" and "open this YouTube video" work end to end; free text from a tainted turn never reaches a third party; tool-call reliability stays above the 7.4 threshold with all packs installed; candidates never used before confirmation; routing decisions logged and overridable; memory thresholds still met.
 
 ### Phase 5 — Voice
 
@@ -1545,6 +1621,7 @@ Recorded in `docs/adr/` using the playbook ADR format. Accepted ADRs are immutab
 | [0009](adr/0009-device-connectivity-without-listening-ports.md) | Device connectivity without listening ports |
 | [0010](adr/0010-bind-approvals-to-verified-fingerprint.md) | Bind approvals to a verified fingerprint |
 | [0011](adr/0011-svelte-5-frontend.md) | Svelte 5 for the frontend |
+| [0012](adr/0012-capability-packs-and-control-class.md) | Capability packs and the Control action class |
 
 ## Appendix A. References
 

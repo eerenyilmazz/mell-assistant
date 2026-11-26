@@ -4,8 +4,8 @@
 
 <p align="center">
   <a href="docs/PLAN.md"><img src="https://img.shields.io/badge/status-planning-FF5A1F?style=flat-square&labelColor=111110" alt="Status: planning"></a>
-  <a href="docs/PLAN.md"><img src="https://img.shields.io/badge/plan-v0.5.3-EEEAE2?style=flat-square&labelColor=111110" alt="Plan v0.5.3"></a>
-  <a href="docs/adr/"><img src="https://img.shields.io/badge/decisions-11_ADRs-EEEAE2?style=flat-square&labelColor=111110" alt="11 decision records"></a>
+  <a href="docs/PLAN.md"><img src="https://img.shields.io/badge/plan-v0.6-EEEAE2?style=flat-square&labelColor=111110" alt="Plan v0.6"></a>
+  <a href="docs/adr/"><img src="https://img.shields.io/badge/decisions-12_ADRs-EEEAE2?style=flat-square&labelColor=111110" alt="12 decision records"></a>
   <a href="https://github.com/eerenyilmazz/mell-assistant/actions/workflows/docs.yml"><img src="https://github.com/eerenyilmazz/mell-assistant/actions/workflows/docs.yml/badge.svg" alt="Docs CI"></a>
 </p>
 
@@ -48,6 +48,20 @@ Most assistants either forget everything or remember things you never asked them
   <br>
   <sub><i>Concept of the command surface — what you asked, what Mell did, and the one decision it needs from you.</i></sub>
 </p>
+
+## Ask for anything
+
+Mell is not limited to chat. Abilities arrive as capability packs, so the list keeps growing without changing the core:
+
+| You say | Mell does | Policy |
+| --- | --- | --- |
+| "Spotify'dan biraz lo-fi aç" | Starts playback through the media pack | Control — automatic once you allow the pack |
+| "Şu YouTube videosunu aç" | Opens the link in your browser | Launch |
+| "IntelliJ'de MELL projesini aç" | Launches the IDE with the project on your Windows host | Launch |
+| "Sesi yarıya indir" | Sets system volume | Control |
+| "İndirilenler'deki eski PDF'leri sil" | Lists files, then stops: deleting after reading untrusted file names needs a clean, approved turn | Destructive |
+
+Catalog, rules and phases: [plan, Section 9.8](docs/PLAN.md#98-capabilities--ask-for-anything).
 
 ## Architecture
 
@@ -147,7 +161,7 @@ Exit criteria for each phase: [plan, Section 15](docs/PLAN.md#15-delivery-phases
 | | Document | What you'll find |
 | --- | --- | --- |
 | 📘 | [Project plan](docs/PLAN.md) | Scope, prior-art review, architecture, permission model, memory, voice, data model, evaluation, phases, risks |
-| 🧭 | [Decision records](docs/adr/) | Eleven ADRs with options, risks and rollback |
+| 🧭 | [Decision records](docs/adr/) | Twelve ADRs with options, risks and rollback |
 | 🛡️ | [Threat model](docs/security/threat-model.md) | Assets, adversaries, STRIDE, OWASP Agentic Top 10, security tests |
 | 📖 | [Glossary](docs/GLOSSARY.md) | Taint, approval binding, turn pipeline and other terms |
 | 🗂️ | [Documentation index](docs/README.md) | Everything else, organised by what you need |

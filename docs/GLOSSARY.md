@@ -4,10 +4,12 @@ Terms as used in MELL's documentation. Plan sections are in parentheses.
 
 | Term | Meaning |
 | --- | --- |
-| **Action class** | Category of a tool call that decides its default policy: read, launch, write, destructive, external, financial (9.2). |
+| **Action class** | Category of a tool call that decides its default policy: read, launch, control, write, destructive, external, financial (9.2). |
 | **Approval binding** | The fingerprint an approval is tied to — tool definition hash, canonical arguments hash, resolved scope, device, single-use id, expiry — re-verified immediately before execution (9.4). |
+| **Capability pack** | A first-party MCP server that adds abilities (media, apps, web …) and declares each tool's action class, taint behaviour, credentials and devices (9.8). |
 | **Candidate (memory)** | A proposed memory entry that is not yet confirmed and is never used as a fact (10.3). |
 | **Confirmed (memory)** | A memory entry the user created or explicitly confirmed; the only kind injected as fact (10.3). |
+| **Control (action class)** | Structured state changes in the user's own apps and accounts — play, pause, volume — automatic once a pack is pre-approved (9.2, 9.8). |
 | **Correlation id** | Identifier assigned to a turn and propagated to every model call, tool call, approval, log line and span it causes (6.9). |
 | **Device connector** | Process on a non-host device that opens an outbound, authenticated connection to the backend and carries MCP messages for that device's MCP server (6.3). |
 | **Hybrid retrieval** | Memory search that combines vector similarity and full-text search, fused by reciprocal rank fusion, after metadata filtering (10.9). |

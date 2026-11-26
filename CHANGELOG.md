@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Plan v0.6: open-ended capabilities — capability packs, initial catalog (apps, system controls, media incl. Spotify and YouTube, web, developer, reminders, calendar, smart home), Control action class, free-text rules, per-turn tool selection, `capabilities` table; phases 3–4 re-scoped (ADR 0012).
 - Plan v0.5.3: UI design direction — calm command surface with an editorial thread and context column, design tokens and anti-patterns (Section 16); new concept mockup.
 - Visual identity for all README graphics: warm near-black, one signal-orange accent, Instrument Serif / Instrument Sans / Geist Mono embedded as subset fonts; sources in `docs/assets/src/`, built by `scripts/build-assets.py`.
 - README redesigned: capability cards, UI concept mockup, architecture, turn pipeline, security model and roadmap graphics (SVG), technology badges and a collapsible request-flow diagram.
