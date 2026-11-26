@@ -1467,16 +1467,16 @@ Recorded in `docs/adr/` using the playbook ADR format. Accepted ADRs are immutab
 
 | ADR | Title |
 | --- | --- |
-| 0001 | TypeScript end-to-end; modular monolith on NestJS |
-| 0002 | PostgreSQL with pgvector as the single data store |
-| 0003 | First-party MCP servers for tool and device integration |
-| 0004 | Permission enforcement outside the model; content-based taint |
-| 0005 | Explicit-only memory writes in v0.1; scoped memory |
-| 0006 | Manual model selection before automatic routing |
-| 0007 | Defer Redis, Tauri, voice and external actions beyond v0.1 |
-| 0008 | Authenticated localhost backend and loopback-only services |
-| 0009 | Device connectivity without listening ports |
-| 0010 | Bind approvals to a verified fingerprint |
+| [0001](adr/0001-typescript-end-to-end-nestjs-monolith.md) | TypeScript end-to-end; modular monolith on NestJS |
+| [0002](adr/0002-postgresql-pgvector-single-store.md) | PostgreSQL with pgvector as the single data store |
+| [0003](adr/0003-first-party-mcp-servers.md) | First-party MCP servers for tool and device integration |
+| [0004](adr/0004-permission-engine-and-content-based-taint.md) | Permission enforcement outside the model; content-based taint |
+| [0005](adr/0005-explicit-scoped-memory-writes.md) | Explicit-only memory writes in v0.1; scoped memory |
+| [0006](adr/0006-manual-model-selection-first.md) | Manual model selection before automatic routing |
+| [0007](adr/0007-defer-redis-tauri-voice-external-actions.md) | Defer Redis, Tauri, voice and external actions beyond v0.1 |
+| [0008](adr/0008-authenticated-localhost-loopback-services.md) | Authenticated localhost backend and loopback-only services |
+| [0009](adr/0009-device-connectivity-without-listening-ports.md) | Device connectivity without listening ports |
+| [0010](adr/0010-bind-approvals-to-verified-fingerprint.md) | Bind approvals to a verified fingerprint |
 
 ## Appendix A. References
 
