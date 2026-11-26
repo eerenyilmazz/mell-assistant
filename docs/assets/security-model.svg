@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-labelledby="t d">
+  <title id="t">MELL security model</title>
+  <desc id="d">The lethal trifecta of private data, untrusted content and external communication; MELL removes the external-communication leg while a turn is tainted. Six defence layers: permission engine, content-based taint, approval binding, pinned tool definitions, no listening ports, supply-chain controls.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0f17"/><stop offset="1" stop-color="#121826"/>
+    </linearGradient>
+  </defs>
+  <style>
+    text { font-family: Inter, 'Segoe UI', 'Helvetica Neue', 'DejaVu Sans', Arial, sans-serif; }
+    .zone { font-size: 13px; font-weight: 700; letter-spacing: 2px; fill: #64748b; }
+    .node { font-size: 14px; font-weight: 700; fill: #f8fafc; }
+    .h    { font-size: 16px; font-weight: 700; fill: #f8fafc; }
+    .s    { font-size: 13.5px; fill: #94a3b8; }
+  </style>
+  <rect width="1280" height="400" rx="20" fill="url(#bg)"/>
+
+  <!-- Trifecta -->
+  <text x="40" y="44" class="zone">THE LETHAL TRIFECTA</text>
+  <path d="M250 96L108 318" stroke="#475569" stroke-width="3"/>
+  <path d="M250 96L392 318" stroke="#ef4444" stroke-width="3" stroke-dasharray="10 8"/>
+  <path d="M108 318H392" stroke="#ef4444" stroke-width="3" stroke-dasharray="10 8"/>
+  <text x="392" y="384" text-anchor="middle" style="font-size:13px;font-weight:700;fill:#fca5a5">blocked while a turn is tainted</text>
+
+  <g transform="translate(250 96)">
+    <circle r="44" fill="#16233b" stroke="#3b82f6" stroke-width="2.5"/>
+    <text y="-4" text-anchor="middle" class="node">Private</text>
+    <text y="14" text-anchor="middle" class="node">data</text>
+  </g>
+  <g transform="translate(108 318)">
+    <circle r="44" fill="#2a1d08" stroke="#f59e0b" stroke-width="2.5"/>
+    <text y="-4" text-anchor="middle" class="node">Untrusted</text>
+    <text y="14" text-anchor="middle" class="node">content</text>
+  </g>
+  <g transform="translate(392 318)">
+    <circle r="44" fill="#2a0f12" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="6 5"/>
+    <g transform="translate(30 -30)"><circle r="14" fill="#0b0f17" stroke="#ef4444" stroke-width="2.5"/><path d="M-5 -5L5 5M5 -5L-5 5" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/></g>
+    <text y="-4" text-anchor="middle" class="node">External</text>
+    <text y="14" text-anchor="middle" class="node">comms</text>
+  </g>
+
+  <path d="M500 40V360" stroke="#1f2937" stroke-width="2"/>
+
+  <!-- Defence layers -->
+  <text x="540" y="44" class="zone">DEFENCE IN DEPTH</text>
+  <g transform="translate(540 70)">
+    <rect width="330" height="84" rx="12" fill="#10291f" stroke="#1f6b4f"/>
+    <text x="20" y="32" class="h">Permission Engine</text>
+    <text x="20" y="56" class="s">Model proposes, deterministic</text>
+    <text x="20" y="74" class="s">code decides every tool call</text>
+  </g>
+  <g transform="translate(890 70)">
+    <rect width="350" height="84" rx="12" fill="#111827" stroke="#263246"/>
+    <text x="20" y="32" class="h">Content-based taint</text>
+    <text x="20" y="56" class="s">Any file name, file, page or document</text>
+    <text x="20" y="74" class="s">taints the turn — no trusted folders</text>
+  </g>
+  <g transform="translate(540 170)">
+    <rect width="330" height="84" rx="12" fill="#111827" stroke="#263246"/>
+    <text x="20" y="32" class="h">Approval binding</text>
+    <text x="20" y="56" class="s">Single-use, re-verified at execution:</text>
+    <text x="20" y="74" class="s">what runs is what was approved</text>
+  </g>
+  <g transform="translate(890 170)">
+    <rect width="350" height="84" rx="12" fill="#111827" stroke="#263246"/>
+    <text x="20" y="32" class="h">Pinned tool definitions</text>
+    <text x="20" y="56" class="s">First-party MCP only; a changed hash</text>
+    <text x="20" y="74" class="s">disables the tool until re-approved</text>
+  </g>
+  <g transform="translate(540 270)">
+    <rect width="330" height="84" rx="12" fill="#111827" stroke="#263246"/>
+    <text x="20" y="32" class="h">No listening ports</text>
+    <text x="20" y="56" class="s">Loopback services, stdio on the host,</text>
+    <text x="20" y="74" class="s">outbound connector on other devices</text>
+  </g>
+  <g transform="translate(890 270)">
+    <rect width="350" height="84" rx="12" fill="#111827" stroke="#263246"/>
+    <text x="20" y="32" class="h">Supply-chain controls</text>
+    <text x="20" y="56" class="s">Lockfile-only, no install scripts,</text>
+    <text x="20" y="74" class="s">release-age delay, SHA-pinned actions</text>
+  </g>
+</svg>

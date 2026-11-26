@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="330" viewBox="0 0 1280 330" role="img" aria-labelledby="t d">
+  <title id="t">MELL core capabilities</title>
+  <desc id="d">Three cards: governed memory, permission-gated actions, and Turkish-first interaction.</desc>
+  <defs>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#151b26"/>
+      <stop offset="1" stop-color="#0e131c"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10b981"/><stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#c084fc"/>
+    </linearGradient>
+  </defs>
+  <style>
+    .title { font: 700 26px Inter, 'Segoe UI', 'Helvetica Neue', 'DejaVu Sans', Arial, sans-serif; fill: #f8fafc; }
+    .body  { font: 400 17px Inter, 'Segoe UI', 'Helvetica Neue', 'DejaVu Sans', Arial, sans-serif; fill: #cbd5e1; }
+    .tag   { font: 600 13px Inter, 'Segoe UI', 'Helvetica Neue', 'DejaVu Sans', Arial, sans-serif; letter-spacing: 1.5px; }
+  </style>
+
+  <!-- Card 1: Governed memory -->
+  <g transform="translate(0 0)">
+    <rect x="1" y="1" width="398" height="328" rx="18" fill="url(#card)" stroke="#243042" stroke-width="2"/>
+    <rect x="24" y="1" width="352" height="4" rx="2" fill="url(#blue)"/>
+    <circle cx="62" cy="70" r="32" fill="#3b82f6" fill-opacity="0.14"/>
+    <g fill="none" stroke="url(#blue)" stroke-width="3" stroke-linecap="round">
+      <ellipse cx="62" cy="58" rx="16" ry="6"/>
+      <path d="M46 58v24c0 3.3 7.2 6 16 6s16-2.7 16-6V58"/>
+      <path d="M46 70c0 3.3 7.2 6 16 6s16-2.7 16-6"/>
+    </g>
+    <text x="110" y="62" class="tag" fill="#60a5fa">MEMORY</text>
+    <text x="110" y="88" class="title">Governed memory</text>
+    <text x="32" y="150" class="body">• Every fact has a source and a state</text>
+    <text x="32" y="184" class="body">• Scoped spaces, no silent overwrites</text>
+    <text x="32" y="218" class="body">• Hybrid search: vectors + Turkish</text>
+    <text x="48" y="242" class="body">full-text</text>
+    <text x="32" y="276" class="body">• Inspect, export, delete — all of it</text>
+  </g>
+
+  <!-- Card 2: Permission-gated actions -->
+  <g transform="translate(440 0)">
+    <rect x="1" y="1" width="398" height="328" rx="18" fill="url(#card)" stroke="#243042" stroke-width="2"/>
+    <rect x="24" y="1" width="352" height="4" rx="2" fill="url(#green)"/>
+    <circle cx="62" cy="70" r="32" fill="#10b981" fill-opacity="0.14"/>
+    <g fill="none" stroke="url(#green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M62 46l18 7v13c0 11-7.5 19-18 23-10.5-4-18-12-18-23V53z"/>
+      <path d="M54 68l6 6 11-12"/>
+    </g>
+    <text x="110" y="62" class="tag" fill="#34d399">ACTIONS</text>
+    <text x="110" y="88" class="title">Permission-gated</text>
+    <text x="32" y="150" class="body">• Model proposes, policy engine decides</text>
+    <text x="32" y="184" class="body">• Untrusted content taints the turn</text>
+    <text x="32" y="218" class="body">• Approvals bound to exact targets</text>
+    <text x="32" y="252" class="body">• No device opens a listening port</text>
+    <text x="32" y="286" class="body">• Every step in an append-only log</text>
+  </g>
+
+  <!-- Card 3: Turkish-first -->
+  <g transform="translate(880 0)">
+    <rect x="1" y="1" width="398" height="328" rx="18" fill="url(#card)" stroke="#243042" stroke-width="2"/>
+    <rect x="24" y="1" width="352" height="4" rx="2" fill="url(#violet)"/>
+    <circle cx="62" cy="70" r="32" fill="#8b5cf6" fill-opacity="0.14"/>
+    <g fill="none" stroke="url(#violet)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M44 52h36a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4H60l-10 8v-8h-6a4 4 0 0 1-4-4V56a4 4 0 0 1 4-4z"/>
+    </g>
+    <text x="62" y="71" text-anchor="middle" style="font: 800 13px Inter, 'Segoe UI', 'DejaVu Sans', Arial, sans-serif" fill="#c084fc">TR</text>
+    <text x="110" y="62" class="tag" fill="#c084fc">LOCAL-FIRST</text>
+    <text x="110" y="88" class="title">Turkish-first</text>
+    <text x="32" y="150" class="body">• Local models on your own GPU</text>
+    <text x="32" y="184" class="body">• Chosen by Turkish evaluation sets</text>
+    <text x="32" y="218" class="body">• Cloud is opt-in, filtered, capped</text>
+    <text x="32" y="252" class="body">• Voice with a measured latency</text>
+    <text x="48" y="276" class="body">budget (Phase 5)</text>
+  </g>
+</svg>

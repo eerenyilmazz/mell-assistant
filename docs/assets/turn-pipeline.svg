@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-labelledby="t d">
+  <title id="t">MELL turn pipeline</title>
+  <desc id="d">Seven stages for every user input: intake, context build, generate, policy, execute, respond, record. Tool proposals loop from generate through policy and execute back to generate.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0f17"/><stop offset="1" stop-color="#121826"/>
+    </linearGradient>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#64748b"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#34d399"/></marker>
+  </defs>
+  <style>
+    text { font-family: Inter, 'Segoe UI', 'Helvetica Neue', 'DejaVu Sans', Arial, sans-serif; }
+    .n  { font-size: 13px; font-weight: 800; fill: #0b0f17; }
+    .h  { font-size: 17px; font-weight: 700; fill: #f8fafc; }
+    .s  { font-size: 13px; fill: #94a3b8; }
+    .lb { font-size: 12px; font-weight: 600; fill: #34d399; }
+    .zone { font-size: 13px; font-weight: 700; letter-spacing: 2px; fill: #64748b; }
+  </style>
+  <rect width="1280" height="300" rx="20" fill="url(#bg)"/>
+  <text x="40" y="44" class="zone">ONE TURN = ONE USER INPUT</text>
+
+  <!-- stage template: x positions 40,215,390,565,740,915,1090 ; width 150 -->
+  <g>
+    <rect x="40" y="110" width="150" height="96" rx="14" fill="#111827" stroke="#263246" stroke-width="1.5"/>
+    <circle cx="64" cy="134" r="12" fill="#60a5fa"/><text x="64" y="139" text-anchor="middle" class="n">1</text>
+    <text x="84" y="140" class="h">Intake</text>
+    <text x="56" y="168" class="s">auth · correlation id</text>
+    <text x="56" y="188" class="s">idempotency key</text>
+  </g>
+  <g>
+    <rect x="215" y="110" width="150" height="96" rx="14" fill="#111827" stroke="#263246" stroke-width="1.5"/>
+    <circle cx="239" cy="134" r="12" fill="#60a5fa"/><text x="239" y="139" text-anchor="middle" class="n">2</text>
+    <text x="259" y="140" class="h">Context</text>
+    <text x="231" y="168" class="s">history · memory</text>
+    <text x="231" y="188" class="s">taint per block</text>
+  </g>
+  <g>
+    <rect x="390" y="110" width="150" height="96" rx="14" fill="#0f1a2e" stroke="#3b82f6" stroke-width="2"/>
+    <circle cx="414" cy="134" r="12" fill="#60a5fa"/><text x="414" y="139" text-anchor="middle" class="n">3</text>
+    <text x="434" y="140" class="h">Generate</text>
+    <text x="406" y="168" class="s">model + allowed</text>
+    <text x="406" y="188" class="s">tools · ≤ 4 steps</text>
+  </g>
+  <g>
+    <rect x="565" y="110" width="150" height="96" rx="14" fill="#0e2219" stroke="#10b981" stroke-width="2"/>
+    <circle cx="589" cy="134" r="12" fill="#34d399"/><text x="589" y="139" text-anchor="middle" class="n">4</text>
+    <text x="609" y="140" class="h">Policy</text>
+    <text x="581" y="168" class="s">allow · deny ·</text>
+    <text x="581" y="188" class="s">bound approval</text>
+  </g>
+  <g>
+    <rect x="740" y="110" width="150" height="96" rx="14" fill="#111827" stroke="#263246" stroke-width="1.5"/>
+    <circle cx="764" cy="134" r="12" fill="#34d399"/><text x="764" y="139" text-anchor="middle" class="n">5</text>
+    <text x="784" y="140" class="h">Execute</text>
+    <text x="756" y="168" class="s">MCP call on the</text>
+    <text x="756" y="188" class="s">target device</text>
+  </g>
+  <g>
+    <rect x="915" y="110" width="150" height="96" rx="14" fill="#111827" stroke="#263246" stroke-width="1.5"/>
+    <circle cx="939" cy="134" r="12" fill="#60a5fa"/><text x="939" y="139" text-anchor="middle" class="n">6</text>
+    <text x="959" y="140" class="h">Respond</text>
+    <text x="931" y="168" class="s">stream over SSE</text>
+    <text x="931" y="188" class="s">cancellable</text>
+  </g>
+  <g>
+    <rect x="1090" y="110" width="150" height="96" rx="14" fill="#111827" stroke="#263246" stroke-width="1.5"/>
+    <circle cx="1114" cy="134" r="12" fill="#60a5fa"/><text x="1114" y="139" text-anchor="middle" class="n">7</text>
+    <text x="1134" y="140" class="h">Record</text>
+    <text x="1106" y="168" class="s">messages · usage</text>
+    <text x="1106" y="188" class="s">audit · candidates</text>
+  </g>
+
+  <!-- straight flow -->
+  <path d="M190 158H211" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M365 158H386" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M540 158H561" stroke="#34d399" stroke-width="2" marker-end="url(#g)"/>
+  <path d="M715 158H736" stroke="#34d399" stroke-width="2" marker-end="url(#g)"/>
+  <!-- generate to respond (final text) goes over the top -->
+  <path d="M465 110V78H990V106" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <text x="728" y="70" text-anchor="middle" class="s">final text</text>
+  <path d="M1065 158H1086" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+  <!-- tool loop back -->
+  <path d="M815 206V246H465V210" stroke="#34d399" stroke-width="2" fill="none" stroke-dasharray="6 5" marker-end="url(#g)"/>
+  <text x="640" y="268" text-anchor="middle" class="lb">tool result returns as untrusted data · turn may become tainted</text>
+  <text x="640" y="230" text-anchor="middle" class="lb">tool proposal loop</text>
+</svg>
