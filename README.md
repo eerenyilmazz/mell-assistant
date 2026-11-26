@@ -22,7 +22,7 @@
 <h3 align="center">A local-first personal AI assistant that remembers responsibly<br>and acts on your computers only with permission.</h3>
 
 <p align="center">
-  <a href="#why-mell">Why MELL</a> ·
+  <a href="#why-mell">Why Mell</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="#how-a-turn-works">How a turn works</a> ·
   <a href="#security-model">Security</a> ·
@@ -33,11 +33,11 @@
 ---
 
 > [!NOTE]
-> **MELL is in the planning phase.** There is no runnable code yet. The design, decisions and threat model are complete enough to start Phase 0; see the [project plan](docs/PLAN.md).
+> **Mell is in the planning phase.** There is no runnable code yet. The design, decisions and threat model are complete enough to start Phase 0; see the [project plan](docs/PLAN.md).
 
-## Why MELL
+## Why Mell
 
-Most assistants either forget everything or remember things you never asked them to, and agents that can touch your files tend to trust whatever text they read. MELL is designed around the opposite defaults.
+Most assistants either forget everything or remember things you never asked them to, and agents that can touch your files tend to trust whatever text they read. Mell is designed around the opposite defaults.
 
 <p align="center">
   <img src="docs/assets/features.svg" alt="Three principles: governed memory, permission first, local and Turkish-first" width="100%">
@@ -115,7 +115,7 @@ Every message goes through the same seven deterministic stages. The model decide
 
 ## Security model
 
-MELL holds personal data and can act on your machines, so security is part of the core design. The key idea: an agent with private data, untrusted content and a way to send data out can be turned against its user — so MELL removes the third capability whenever untrusted content is in play.
+Mell holds personal data and can act on your machines, so security is part of the core design. The key idea: an agent with private data, untrusted content and a way to send data out can be turned against its user — so Mell removes the third capability whenever untrusted content is in play.
 
 <p align="center">
   <img src="docs/assets/security-model.svg" alt="Lethal trifecta with external communication blocked while a turn is tainted, and six defence layers" width="100%">
