@@ -1,134 +1,237 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="900" viewBox="0 0 1280 900" role="img" aria-labelledby="t d">
-  <title id="t">MELL user interface concept</title>
-  <desc id="d">Concept mockup of the MELL chat screen: sidebar with navigation and conversations, a Turkish conversation where a fact is saved to memory, a file listing marks the turn as tainted, a delete request is blocked by policy, and an approval card asks to launch IntelliJ IDEA.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="880" viewBox="0 0 1280 880" role="img" aria-labelledby="t d">
+  <title id="t">MELL command-center interface concept</title>
+  <desc id="d">Concept of MELL's voice-first command center: a central voice core showing the listening state and live transcript; system telemetry, devices and security controls on the left; retrieved memory and a live activity log on the right; an authorization card for launching IntelliJ IDEA and a command bar at the bottom.</desc>
   <defs>
-    <linearGradient id="win" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#0e131c"/><stop offset="1" stop-color="#0a0e15"/>
+    <radialGradient id="bgGlow" cx="0.5" cy="0.36" r="0.6">
+      <stop offset="0" stop-color="#0b2236"/>
+      <stop offset="0.55" stop-color="#060b13"/>
+      <stop offset="1" stop-color="#03060b"/>
+    </radialGradient>
+    <radialGradient id="core" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#e0fbff" stop-opacity="0.95"/>
+      <stop offset="0.25" stop-color="#22d3ee" stop-opacity="0.75"/>
+      <stop offset="0.6" stop-color="#0e7490" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#0e7490" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.6" stop-color="#22d3ee" stop-opacity="0"/>
+      <stop offset="0.82" stop-color="#22d3ee" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#67e8f9"/><stop offset="1" stop-color="#3b82f6"/>
     </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#22d3ee"/>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0891b2"/><stop offset="1" stop-color="#67e8f9"/>
     </linearGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
-      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000" flood-opacity="0.55"/>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#67e8f9" stroke-opacity="0.035"/>
+    </pattern>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
   <style>
     text { font-family: Inter, 'Segoe UI', 'Helvetica Neue', 'DejaVu Sans', Arial, sans-serif; }
-    .muted { fill: #64748b; font-size: 13px; }
-    .nav   { fill: #94a3b8; font-size: 14px; font-weight: 500; }
-    .navA  { fill: #f8fafc; font-size: 14px; font-weight: 600; }
-    .msg   { fill: #e2e8f0; font-size: 15px; }
-    .chipT { font-size: 12.5px; font-weight: 600; }
-    .h     { fill: #f8fafc; font-size: 15px; font-weight: 700; }
+    .mono  { font-family: 'JetBrains Mono', 'SF Mono', Consolas, 'DejaVu Sans Mono', monospace; }
+    .ph    { font-size: 11px; font-weight: 700; letter-spacing: 2.2px; fill: #67e8f9; }
+    .lbl   { font-size: 12px; fill: #64748b; }
+    .val   { font-size: 12.5px; fill: #e2e8f0; }
+    .ok    { fill: #34d399; }
+    .warn  { fill: #fbbf24; }
+    .bad   { fill: #f87171; }
+    .dim   { fill: #475569; }
+    .panel { fill: #07111c; fill-opacity: 0.78; stroke: #67e8f9; stroke-opacity: 0.16; }
+    .corner{ fill: none; stroke: #67e8f9; stroke-width: 2; stroke-opacity: 0.85; }
   </style>
 
-  <rect width="1280" height="900" rx="22" fill="#05070b"/>
-  <!-- window -->
-  <rect x="30" y="26" width="1220" height="840" rx="16" fill="#000" filter="url(#shadow)"/>
-  <rect x="30" y="26" width="1220" height="840" rx="16" fill="url(#win)" stroke="#1f2937"/>
-  <!-- title bar -->
-  <path d="M46 26h1188a16 16 0 0 1 16 16v20H30V42a16 16 0 0 1 16-16z" fill="#0b0f16"/>
-  <circle cx="56" cy="44" r="6" fill="#ef4444" fill-opacity="0.8"/>
-  <circle cx="76" cy="44" r="6" fill="#f59e0b" fill-opacity="0.8"/>
-  <circle cx="96" cy="44" r="6" fill="#10b981" fill-opacity="0.8"/>
-  <text x="640" y="49" text-anchor="middle" class="muted">MELL</text>
+  <rect width="1280" height="880" fill="url(#bgGlow)"/>
+  <rect width="1280" height="880" fill="url(#grid)"/>
 
-  <!-- sidebar -->
-  <path d="M30 62H280V866H46a16 16 0 0 1-16-16z" fill="#0b1018"/>
-  <text x="56" y="104" style="font-size:22px;font-weight:800;letter-spacing:4px;fill:#f8fafc">MELL</text>
-  <rect x="58" y="114" width="34" height="3" rx="1.5" fill="url(#accent)"/>
-
-  <rect x="46" y="140" width="218" height="38" rx="10" fill="#16233b"/>
-  <circle cx="68" cy="159" r="5" fill="#60a5fa"/>
-  <text x="84" y="164" class="navA">Chat</text>
-  <circle cx="68" cy="199" r="5" fill="#334155"/><text x="84" y="204" class="nav">Memory Center</text>
-  <circle cx="68" cy="239" r="5" fill="#334155"/><text x="84" y="244" class="nav">Activity</text>
-  <circle cx="68" cy="279" r="5" fill="#334155"/><text x="84" y="284" class="nav">Settings</text>
-
-  <text x="56" y="336" style="font-size:12px;font-weight:700;letter-spacing:1.5px;fill:#475569">CONVERSATIONS</text>
-  <text x="56" y="366" class="navA">MELL planı</text>
-  <text x="56" y="396" class="nav">Wick API</text>
-  <text x="56" y="426" class="nav">Haftalık notlar</text>
-
-  <rect x="46" y="772" width="218" height="74" rx="12" fill="#0f1520" stroke="#1f2937"/>
-  <circle cx="66" cy="796" r="5" fill="#10b981"/><text x="80" y="801" style="font-size:13px;fill:#cbd5e1">Windows host · online</text>
-  <circle cx="66" cy="824" r="5" fill="#10b981"/><text x="80" y="829" style="font-size:13px;fill:#cbd5e1">MacBook · connected</text>
-
-  <!-- header -->
-  <text x="310" y="104" style="font-size:18px;font-weight:700;fill:#f8fafc">MELL planı</text>
-  <g transform="translate(860 82)">
-    <rect width="170" height="32" rx="16" fill="#111827" stroke="#263246"/>
-    <circle cx="18" cy="16" r="5" fill="#10b981"/>
-    <text x="32" y="21" style="font-size:13px;font-weight:600;fill:#e2e8f0">qwen3:8b · local</text>
+  <!-- ===== Top bar ===== -->
+  <text x="32" y="40" style="font-size:22px;font-weight:800;letter-spacing:7px;fill:#f0fdff" filter="url(#glow)">MELL</text>
+  <text x="128" y="39" class="mono" style="font-size:11px;letter-spacing:2px;fill:#67e8f9;opacity:0.8">COMMAND CENTER</text>
+  <g transform="translate(640 34)">
+    <rect x="-150" y="-15" width="300" height="28" rx="14" fill="#07111c" stroke="#67e8f9" stroke-opacity="0.25"/>
+    <circle cx="-128" cy="-1" r="4" class="ok"/>
+    <text x="-116" y="3.5" class="mono" style="font-size:11.5px;fill:#a5f3fc;letter-spacing:1px">LOCAL · qwen3:8b · scope MELL</text>
   </g>
-  <g transform="translate(1042 82)">
-    <rect width="180" height="32" rx="16" fill="#111827" stroke="#263246"/>
-    <text x="16" y="21" style="font-size:13px;font-weight:600;fill:#e2e8f0">Scope: MELL + global</text>
-  </g>
-  <path d="M296 130H1234" stroke="#1a2230"/>
+  <text x="1248" y="32" text-anchor="end" class="mono" style="font-size:16px;fill:#e2e8f0">13:25:12</text>
+  <text x="1248" y="48" text-anchor="end" class="mono" style="font-size:10.5px;letter-spacing:1.5px;fill:#64748b">PER · 26 KAS 2026</text>
+  <path d="M32 64H1248" stroke="#67e8f9" stroke-opacity="0.12"/>
 
-  <!-- user message 1 -->
-  <rect x="742" y="154" width="480" height="48" rx="16" fill="#1d4ed8" fill-opacity="0.9"/>
-  <text x="764" y="184" class="msg" style="fill:#fff">Yeni projelerimde Java 21 kullanıyorum, bunu hatırla.</text>
-
-  <!-- assistant 1 -->
-  <circle cx="320" cy="238" r="14" fill="url(#accent)"/><text x="320" y="243" text-anchor="middle" style="font-size:12px;font-weight:800;fill:#0b0f17">M</text>
-  <text x="346" y="243" class="msg">Kaydettim. Yeni proje önerilerinde bunu dikkate alacağım.</text>
-  <g transform="translate(346 256)">
-    <rect width="372" height="28" rx="14" fill="#16233b" stroke="#2d4a7a"/>
-    <text x="14" y="19" class="chipT" style="fill:#93c5fd">Memory · confirmed · global · "Prefers Java 21"</text>
-    <text x="352" y="19" text-anchor="end" class="chipT" style="fill:#60a5fa">Undo</text>
+  <!-- ===== Left column ===== -->
+  <!-- SYSTEM -->
+  <rect x="32" y="84" width="290" height="228" rx="6" class="panel"/>
+  <path d="M32 98V84H46M308 84H322V98M32 298V312H46M308 312H322V298" class="corner"/>
+  <text x="50" y="108" class="ph">SYSTEM · WINDOWS HOST</text>
+  <g class="mono">
+    <text x="50" y="138" class="lbl">GPU VRAM</text><text x="304" y="138" text-anchor="end" class="val">7.4 / 12 GB</text>
+    <rect x="50" y="146" width="254" height="5" rx="2.5" fill="#0f2233"/><rect x="50" y="146" width="157" height="5" rx="2.5" fill="url(#bar)"/>
+    <text x="50" y="174" class="lbl">CPU</text><text x="304" y="174" text-anchor="end" class="val">18 %</text>
+    <rect x="50" y="182" width="254" height="5" rx="2.5" fill="#0f2233"/><rect x="50" y="182" width="46" height="5" rx="2.5" fill="url(#bar)"/>
+    <text x="50" y="210" class="lbl">RAM</text><text x="304" y="210" text-anchor="end" class="val">21 / 32 GB</text>
+    <rect x="50" y="218" width="254" height="5" rx="2.5" fill="#0f2233"/><rect x="50" y="218" width="167" height="5" rx="2.5" fill="url(#bar)"/>
+    <text x="50" y="250" class="lbl">CHAT</text><text x="304" y="250" text-anchor="end" class="val">qwen3:8b · resident</text>
+    <text x="50" y="272" class="lbl">EMBED</text><text x="304" y="272" text-anchor="end" class="val">bge-m3 · resident</text>
+    <text x="50" y="294" class="lbl">TTFT P50</text><text x="304" y="294" text-anchor="end" class="val ok">410 ms</text>
   </g>
 
-  <!-- user message 2 -->
-  <rect x="790" y="312" width="432" height="48" rx="16" fill="#1d4ed8" fill-opacity="0.9"/>
-  <text x="812" y="342" class="msg" style="fill:#fff">İndirilenler'deki eski PDF'leri bul ve sil.</text>
-
-  <!-- assistant 2 with tool chips -->
-  <circle cx="320" cy="396" r="14" fill="url(#accent)"/><text x="320" y="401" text-anchor="middle" style="font-size:12px;font-weight:800;fill:#0b0f17">M</text>
-  <g transform="translate(346 382)">
-    <rect width="420" height="28" rx="14" fill="#10291f" stroke="#1f6b4f"/>
-    <text x="14" y="19" class="chipT" style="fill:#6ee7b7">filesystem.list · Downloads · auto · 0.2 s</text>
+  <!-- DEVICES -->
+  <rect x="32" y="328" width="290" height="176" rx="6" class="panel"/>
+  <path d="M32 342V328H46M308 328H322V342M32 490V504H46M308 504H322V490" class="corner"/>
+  <text x="50" y="352" class="ph">DEVICES</text>
+  <g class="mono">
+    <circle cx="56" cy="380" r="4" class="ok"/><text x="68" y="384" class="val">Windows host</text><text x="304" y="384" text-anchor="end" class="lbl">stdio</text>
+    <circle cx="56" cy="410" r="4" class="ok"/><text x="68" y="414" class="val">MacBook Air</text><text x="304" y="414" text-anchor="end" class="lbl">connector</text>
+    <text x="68" y="432" class="lbl">no listening port · 12 ms</text>
+    <circle cx="56" cy="462" r="4" class="dim"/><text x="68" y="466" class="val" style="fill:#94a3b8">Cloud model</text><text x="304" y="466" text-anchor="end" class="lbl">off</text>
+    <text x="68" y="484" class="lbl">spend $0.00 / $10</text>
   </g>
-  <g transform="translate(776 382)">
-    <rect width="150" height="28" rx="14" fill="#2a1d08" stroke="#7c5a12"/>
-    <text x="14" y="19" class="chipT" style="fill:#fbbf24">turn tainted</text>
+
+  <!-- SAFEGUARDS -->
+  <rect x="32" y="520" width="290" height="196" rx="6" class="panel"/>
+  <path d="M32 534V520H46M308 520H322V534M32 702V716H46M308 716H322V702" class="corner"/>
+  <text x="50" y="544" class="ph">SAFEGUARDS</text>
+  <g class="mono">
+    <text x="50" y="574" class="lbl">TURN</text><text x="304" y="574" text-anchor="end" class="val ok">CLEAN</text>
+    <text x="50" y="596" class="lbl">POLICY</text><text x="304" y="596" text-anchor="end" class="val">external · destructive gated</text>
   </g>
-  <g transform="translate(346 420)">
-    <rect width="580" height="28" rx="14" fill="#2a0f12" stroke="#7f1d1d"/>
-    <text x="14" y="19" class="chipT" style="fill:#fca5a5">filesystem.delete · blocked by policy: destructive action in a tainted turn</text>
+  <g class="mono">
+    <text x="50" y="630" class="val">Microphone</text>
+    <rect x="266" y="619" width="38" height="18" rx="9" fill="#0e7490"/><circle cx="295" cy="628" r="7" fill="#e0fbff"/>
+    <text x="50" y="656" class="val">Device tools</text>
+    <rect x="266" y="645" width="38" height="18" rx="9" fill="#0e7490"/><circle cx="295" cy="654" r="7" fill="#e0fbff"/>
+    <text x="50" y="682" class="val">Remote access</text>
+    <rect x="266" y="671" width="38" height="18" rx="9" fill="#0e7490"/><circle cx="295" cy="680" r="7" fill="#e0fbff"/>
+    <text x="50" y="708" class="val" style="fill:#94a3b8">Cloud models</text>
+    <rect x="266" y="697" width="38" height="18" rx="9" fill="#1e293b"/><circle cx="275" cy="706" r="7" fill="#64748b"/>
   </g>
-  <text x="346" y="480" class="msg">3 eski PDF buldum. Bu turda silme engellendi; dosyaları listeden</text>
-  <text x="346" y="504" class="msg">kendin seçersen silme isteği temiz bir turda onaya gelir.</text>
 
-  <!-- user 3 -->
-  <rect x="872" y="536" width="350" height="48" rx="16" fill="#1d4ed8" fill-opacity="0.9"/>
-  <text x="894" y="566" class="msg" style="fill:#fff">Windows'ta IntelliJ'i aç.</text>
+  <!-- ===== Center: voice core ===== -->
+  <g transform="translate(640 292)">
+    <circle r="205" fill="url(#halo)"/>
+    <circle r="182" fill="none" stroke="url(#ring)" stroke-width="2" stroke-opacity="0.55" stroke-dasharray="70 12 18 12" transform="rotate(-20)"/>
+    <circle r="166" fill="none" stroke="#67e8f9" stroke-width="7" stroke-opacity="0.22" stroke-dasharray="1.5 6.2"/>
+    <circle r="146" fill="none" stroke="#22d3ee" stroke-width="3" stroke-opacity="0.9" stroke-dasharray="230 688" stroke-linecap="round" transform="rotate(-140)" filter="url(#glow)"/>
+    <circle r="146" fill="none" stroke="#3b82f6" stroke-width="3" stroke-opacity="0.8" stroke-dasharray="120 798" stroke-linecap="round" transform="rotate(40)"/>
+    <circle r="146" fill="none" stroke="#67e8f9" stroke-width="1" stroke-opacity="0.18"/>
+    <circle r="122" fill="none" stroke="#67e8f9" stroke-width="1" stroke-opacity="0.35" stroke-dasharray="4 4"/>
+    <circle r="104" fill="url(#core)"/>
+    <circle r="66" fill="none" stroke="#e0fbff" stroke-width="1.5" stroke-opacity="0.6"/>
+    <g fill="#f0fdff" filter="url(#glow)">
+      <rect x="-58" y="-6"  width="6" height="12" rx="3"/>
+      <rect x="-46" y="-14" width="6" height="28" rx="3"/>
+      <rect x="-34" y="-24" width="6" height="48" rx="3"/>
+      <rect x="-22" y="-36" width="6" height="72" rx="3"/>
+      <rect x="-10" y="-20" width="6" height="40" rx="3"/>
+      <rect x="2"   y="-42" width="6" height="84" rx="3"/>
+      <rect x="14"  y="-28" width="6" height="56" rx="3"/>
+      <rect x="26"  y="-16" width="6" height="32" rx="3"/>
+      <rect x="38"  y="-26" width="6" height="52" rx="3"/>
+      <rect x="50"  y="-10" width="6" height="20" rx="3"/>
+    </g>
+    <g stroke="#67e8f9" stroke-opacity="0.6" stroke-width="2">
+      <path d="M0 -196V-188M0 188V196M-196 0H-188M188 0H196"/>
+    </g>
+  </g>
+  <text x="640" y="516" text-anchor="middle" class="mono" style="font-size:13px;font-weight:700;letter-spacing:6px;fill:#67e8f9" filter="url(#glow)">LISTENING</text>
+  <text x="640" y="536" text-anchor="middle" class="mono" style="font-size:10.5px;letter-spacing:1.5px;fill:#475569">turn c-7f3a · push-to-talk</text>
 
-  <!-- input bar -->
-  <rect x="310" y="772" width="912" height="56" rx="16" fill="#0f1520" stroke="#263246"/>
-  <text x="334" y="806" style="font-size:15px;fill:#475569">MELL'e yaz…</text>
-  <circle cx="1150" cy="800" r="18" fill="#111827" stroke="#263246"/>
-  <rect x="1145" y="790" width="10" height="14" rx="5" fill="none" stroke="#94a3b8" stroke-width="2"/>
-  <path d="M1141 800a9 9 0 0 0 18 0M1150 809v4" fill="none" stroke="#94a3b8" stroke-width="2"/>
-  <circle cx="1196" cy="800" r="18" fill="url(#accent)"/>
-  <path d="M1189 800h13M1197 794l6 6-6 6" fill="none" stroke="#0b0f17" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="334" y="850" class="muted">TTFT 0.41 s · 1.2k tokens · cloud $0.00 / $10 · Esc to cancel</text>
+  <text x="640" y="572" text-anchor="middle" style="font-size:17px;fill:#e2e8f0">“Windows'ta IntelliJ'i aç, MELL projesiyle çalışacağım.”</text>
+  <text x="640" y="600" text-anchor="middle" style="font-size:14.5px;fill:#7dd3fc">IntelliJ IDEA'yı açmak için onayın gerekiyor.</text>
 
-  <!-- approval card (assistant reply to message 3) -->
-  <circle cx="320" cy="620" r="14" fill="url(#accent)"/><text x="320" y="625" text-anchor="middle" style="font-size:12px;font-weight:800;fill:#0b0f17">M</text>
-  <rect x="346" y="606" width="456" height="150" rx="16" fill="#000" filter="url(#shadow)" opacity="0.6"/>
-  <rect x="346" y="606" width="456" height="150" rx="16" fill="#111827" stroke="#f59e0b" stroke-opacity="0.7" stroke-width="1.5"/>
-  <text x="370" y="638" class="h">Approval required</text>
-  <text x="778" y="638" text-anchor="end" style="font-size:12.5px;font-weight:600;fill:#fbbf24">expires 4:58</text>
-  <text x="370" y="666" style="font-size:13.5px;fill:#94a3b8">Action</text><text x="450" y="666" style="font-size:13.5px;fill:#e2e8f0;font-weight:600">app.launch · IntelliJ IDEA</text>
-  <text x="370" y="690" style="font-size:13.5px;fill:#94a3b8">Class</text><text x="450" y="690" style="font-size:13.5px;fill:#e2e8f0">Launch · not pre-approved</text>
-  <text x="370" y="714" style="font-size:13.5px;fill:#94a3b8">Device</text><text x="450" y="714" style="font-size:13.5px;fill:#e2e8f0">Windows host</text>
-  <text x="370" y="738" style="font-size:13.5px;fill:#94a3b8">Turn</text><text x="450" y="738" style="font-size:13.5px;fill:#6ee7b7">clean</text>
-  <rect x="566" y="704" width="96" height="32" rx="10" fill="#0f1520" stroke="#334155"/>
-  <text x="614" y="725" text-anchor="middle" style="font-size:13.5px;font-weight:600;fill:#cbd5e1">Reject</text>
-  <rect x="672" y="704" width="114" height="32" rx="10" fill="#2563eb"/>
-  <text x="729" y="725" text-anchor="middle" style="font-size:13.5px;font-weight:700;fill:#fff">Approve once</text>
+  <!-- authorization card -->
+  <g>
+    <rect x="392" y="626" width="496" height="138" rx="8" fill="#140f05" fill-opacity="0.85" stroke="#fbbf24" stroke-opacity="0.55"/>
+    <path d="M392 640V626H406M874 626H888V640M392 750V764H406M874 764H888V750" fill="none" stroke="#fbbf24" stroke-width="2"/>
+    <text x="414" y="652" class="ph" style="fill:#fbbf24">AUTHORIZATION REQUIRED</text>
+    <g transform="translate(850 652)">
+      <circle r="14" fill="none" stroke="#3a2a08" stroke-width="3"/>
+      <circle r="14" fill="none" stroke="#fbbf24" stroke-width="3" stroke-dasharray="78 88" stroke-linecap="round" transform="rotate(-90)"/>
+      <text y="3.5" text-anchor="middle" class="mono" style="font-size:9px;fill:#fde68a">4:58</text>
+    </g>
+    <g class="mono">
+      <text x="414" y="682" class="lbl">ACTION</text><text x="500" y="682" class="val" style="font-weight:700">app.launch · IntelliJ IDEA</text>
+      <text x="414" y="704" class="lbl">TARGET</text><text x="500" y="704" class="val">Windows host · Launch class</text>
+      <text x="414" y="726" class="lbl">TURN</text><text x="500" y="726" class="val ok">clean</text>
+      <text x="414" y="748" class="lbl">BINDING</text><text x="500" y="748" class="val">def a91c… · args 3e07… · single-use</text>
+    </g>
+    <rect x="752" y="688" width="118" height="28" rx="4" fill="none" stroke="#475569"/>
+    <text x="811" y="706" text-anchor="middle" class="mono" style="font-size:11.5px;font-weight:700;letter-spacing:1.5px;fill:#cbd5e1">DENY</text>
+    <rect x="752" y="722" width="118" height="30" rx="4" fill="#fbbf24"/>
+    <text x="811" y="741" text-anchor="middle" class="mono" style="font-size:11.5px;font-weight:800;letter-spacing:1.5px;fill:#1c1303">AUTHORIZE</text>
+  </g>
 
-  <text x="1250" y="890" text-anchor="end" style="font-size:12px;fill:#475569">Concept mockup — not a screenshot</text>
+  <!-- ===== Right column ===== -->
+  <rect x="958" y="84" width="290" height="270" rx="6" class="panel"/>
+  <path d="M958 98V84H972M1234 84H1248V98M958 340V354H972M1234 354H1248V340" class="corner"/>
+  <text x="976" y="108" class="ph">MEMORY · IN CONTEXT</text>
+  <text x="1230" y="108" text-anchor="end" class="mono lbl">3 / 42</text>
+  <g>
+    <rect x="976" y="122" width="254" height="62" rx="5" fill="#0a1a2a" stroke="#1e3a5f"/>
+    <text x="988" y="144" style="font-size:13px;fill:#e2e8f0">Prefers Java 21 for new projects</text>
+    <text x="988" y="166" class="mono" style="font-size:10.5px;fill:#64748b">global · confirmed · chat 26 Kas</text>
+    <rect x="976" y="192" width="254" height="62" rx="5" fill="#0a1a2a" stroke="#1e3a5f"/>
+    <text x="988" y="214" style="font-size:13px;fill:#e2e8f0">MELL: NestJS modular monolith</text>
+    <text x="988" y="236" class="mono" style="font-size:10.5px;fill:#64748b">MELL · confirmed · ADR 0001</text>
+    <rect x="976" y="262" width="254" height="62" rx="5" fill="#0a1a2a" stroke="#1e3a5f"/>
+    <text x="988" y="284" style="font-size:13px;fill:#e2e8f0">IDE of choice: IntelliJ IDEA</text>
+    <text x="988" y="306" class="mono" style="font-size:10.5px;fill:#64748b">global · confirmed · chat 12 Kas</text>
+    <circle cx="1216" cy="140" r="4" class="ok"/><circle cx="1216" cy="210" r="4" class="ok"/><circle cx="1216" cy="280" r="4" class="ok"/>
+  </g>
+  <text x="976" y="342" class="mono" style="font-size:10.5px;fill:#475569">hybrid · vector + turkish FTS · RRF</text>
+
+  <rect x="958" y="370" width="290" height="346" rx="6" class="panel"/>
+  <path d="M958 384V370H972M1234 370H1248V384M958 702V716H972M1234 716H1248V702" class="corner"/>
+  <text x="976" y="394" class="ph">ACTIVITY</text>
+  <circle cx="1236" cy="390" r="4" class="ok"/>
+  <g class="mono" style="font-size:11px">
+    <text x="976" y="424" class="dim">13:24:51</text><text x="1040" y="424" fill="#cbd5e1">tool.call</text><text x="1230" y="424" text-anchor="end" class="ok">ok</text>
+    <text x="1040" y="440" fill="#64748b">filesystem.list · Downloads</text>
+    <text x="976" y="466" class="dim">13:24:51</text><text x="1040" y="466" fill="#cbd5e1">taint</text><text x="1230" y="466" text-anchor="end" class="warn">set</text>
+    <text x="1040" y="482" fill="#64748b">source: file names</text>
+    <text x="976" y="508" class="dim">13:24:52</text><text x="1040" y="508" fill="#cbd5e1">policy</text><text x="1230" y="508" text-anchor="end" class="bad">blocked</text>
+    <text x="1040" y="524" fill="#64748b">filesystem.delete · tainted</text>
+    <text x="976" y="550" class="dim">13:25:01</text><text x="1040" y="550" fill="#cbd5e1">memory.add</text><text x="1230" y="550" text-anchor="end" class="ok">confirmed</text>
+    <text x="1040" y="566" fill="#64748b">"Prefers Java 21"</text>
+    <text x="976" y="592" class="dim">13:25:12</text><text x="1040" y="592" fill="#cbd5e1">turn.start</text><text x="1230" y="592" text-anchor="end" fill="#67e8f9">c-7f3a</text>
+    <text x="1040" y="608" fill="#64748b">voice · clean</text>
+    <text x="976" y="634" class="dim">13:25:12</text><text x="1040" y="634" fill="#cbd5e1">approval</text><text x="1230" y="634" text-anchor="end" class="warn">pending</text>
+    <text x="1040" y="650" fill="#64748b">app.launch · IntelliJ IDEA</text>
+    <path d="M976 670H1230" stroke="#1e293b"/>
+    <text x="976" y="694" fill="#475569">append-only · correlation-linked</text>
+  </g>
+
+  <!-- ===== Bottom row ===== -->
+  <rect x="32" y="738" width="290" height="96" rx="6" class="panel"/>
+  <path d="M32 752V738H46M308 738H322V752M32 820V834H46M308 834H322V820" class="corner"/>
+  <text x="50" y="762" class="ph">LAST TURN</text>
+  <g class="mono">
+    <text x="50" y="788" class="lbl">speech end → audio</text><text x="304" y="788" text-anchor="end" class="val ok">0.98 s</text>
+    <text x="50" y="810" class="lbl">STT · LLM · TTS</text><text x="304" y="810" text-anchor="end" class="val">280 · 390 · 120</text>
+  </g>
+
+  <rect x="958" y="738" width="290" height="96" rx="6" class="panel"/>
+  <path d="M958 752V738H972M1234 738H1248V752M958 820V834H972M1234 834H1248V820" class="corner"/>
+  <text x="976" y="762" class="ph">SHORTCUTS</text>
+  <g class="mono" style="font-size:11px">
+    <text x="976" y="788" fill="#cbd5e1">Space</text><text x="1030" y="788" fill="#64748b">hold to talk</text>
+    <text x="1136" y="788" fill="#cbd5e1">Esc</text><text x="1168" y="788" fill="#64748b">cancel</text>
+    <text x="976" y="810" fill="#cbd5e1">Ctrl M</text><text x="1030" y="810" fill="#64748b">mute</text>
+    <text x="1136" y="810" fill="#cbd5e1">Ctrl K</text><text x="1186" y="810" fill="#64748b">command</text>
+  </g>
+
+  <g>
+    <rect x="342" y="784" width="596" height="50" rx="25" fill="#07111c" stroke="#67e8f9" stroke-opacity="0.35"/>
+    <text x="374" y="814" class="mono" style="font-size:13px;fill:#475569">Type a command or hold Space to talk…</text>
+    <circle cx="866" cy="809" r="17" fill="none" stroke="#67e8f9" stroke-opacity="0.6"/>
+    <rect x="861" y="799" width="10" height="14" rx="5" fill="none" stroke="#a5f3fc" stroke-width="2"/>
+    <path d="M857 809a9 9 0 0 0 18 0M866 818v4" fill="none" stroke="#a5f3fc" stroke-width="2"/>
+    <circle cx="910" cy="809" r="17" fill="#22d3ee"/>
+    <path d="M903 809h13M911 803l6 6-6 6" fill="none" stroke="#03060b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="1248" y="866" text-anchor="end" class="mono" style="font-size:10.5px;letter-spacing:1px;fill:#334155">CONCEPT MOCKUP — NOT A SCREENSHOT</text>
 </svg>

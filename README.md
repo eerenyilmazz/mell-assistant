@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="docs/PLAN.md"><img src="https://img.shields.io/badge/status-planning-f59e0b?style=for-the-badge" alt="Status: planning"></a>
-  <a href="docs/PLAN.md"><img src="https://img.shields.io/badge/plan-v0.5.2-3b82f6?style=for-the-badge" alt="Plan v0.5.2"></a>
+  <a href="docs/PLAN.md"><img src="https://img.shields.io/badge/plan-v0.5.3-3b82f6?style=for-the-badge" alt="Plan v0.5.3"></a>
   <a href="docs/adr/"><img src="https://img.shields.io/badge/ADRs-11-8b5cf6?style=for-the-badge" alt="11 decision records"></a>
   <a href="https://github.com/eerenyilmazz/mell-assistant/actions/workflows/docs.yml"><img src="https://github.com/eerenyilmazz/mell-assistant/actions/workflows/docs.yml/badge.svg" alt="Docs CI" height="28"></a>
 </p>
@@ -44,9 +44,9 @@ Most assistants either forget everything or remember things you never asked them
 </p>
 
 <p align="center">
-  <img src="docs/assets/ui-preview.svg" alt="Concept mockup of the MELL chat screen with memory chips, a tainted turn, a blocked delete and an approval card" width="100%">
+  <img src="docs/assets/ui-preview.svg" alt="Concept of the MELL command center: central voice core with live transcript, system, devices and safeguards panels on the left, memory in context and activity on the right, and an authorization card" width="100%">
   <br>
-  <sub><i>Concept mockup of the planned chat screen — memory you can undo, tool calls you can see, a delete blocked by policy and an approval bound to its exact target.</i></sub>
+  <sub><i>Concept of the command center — a voice core surrounded by live state: what MELL knows, what it is doing, and what it is allowed to do.</i></sub>
 </p>
 
 ## Architecture

@@ -2,10 +2,11 @@
 
 | Field         | Value                                                |
 | ------------- | ---------------------------------------------------- |
-| Status        | Draft v0.5.2 — for review                            |
+| Status        | Draft v0.5.3 — for review                            |
 | Owner         | Eren                                                 |
 | Last updated  | 2026-11-26                                           |
 | Document type | Plan (no implementation in this phase)               |
+| Changes v0.5.3 | UI design direction changed from a chat layout to a voice-first command center (16, 16.6) |
 | Changes v0.5.2 | Frontend decided: Svelte 5 (OD-5 closed, ADR 0011); streaming-rendering rules for the chat UI (16.0) |
 | Changes v0.5.1 | Read-tool size and count limits (9.7); threat model linked from Section 12. See `CHANGELOG.md` for earlier versions |
 | Changes v0.5  | Fixes from external review of v0.4: device connectivity without listening ports (6.3), turn pipeline and cross-cutting concerns (6.5, 6.9), content-based taint (9.3), approval binding against TOCTOU (9.4), hybrid memory retrieval (10.9), consistent voice budget (11.2), data model aligned with ER diagram (13.1); project now follows `agent-playbook` (19) |
@@ -1300,7 +1301,9 @@ The common performance failure in LLM chat UIs is re-parsing and re-rendering th
 5. **Defer heavy blocks.** Syntax highlighting and diagrams render after their block closes.
 6. **Measure.** Frame time and input latency during a 2,000-token answer are part of the Phase 1 baseline.
 
-Low-fidelity wireframes to fix layout and information content, not visual design. Design direction: dark theme by default, anthracite background, electric-blue accent, minimal animation, distinct visual states for listening, thinking and speaking.
+**Design direction: a voice-first command center, not a chat app.** The primary view (16.6) centres on a voice core and surrounds it with live system state, memory in context, activity and safeguards, so the user always sees what MELL knows, what it is doing and what it is allowed to do. Visual language: near-black background, cyan and blue accents, thin HUD-style panel frames, monospace telemetry, restrained motion that reflects real state (listening, thinking, speaking) rather than decoration. The design is original; no third-party characters, logos or film interfaces are reproduced.
+
+The wireframes in 16.1–16.5 fix information content for the secondary views; the visual reference for the primary view is the concept in 16.6.
 
 ### 16.1 Navigation
 
@@ -1313,6 +1316,9 @@ flowchart LR
     SET --> MODELS["Models and cloud cap"]
     SET --> TOOLS["Tools and definitions"]
     SET --> PRIV["Privacy and kill switches"]
+    CC["Command Center<br/>(primary view)"] --> CHAT
+    SHELL --> CC
+    CC -.->|"pending approval"| APPR
     CHAT -.->|"pending approval"| APPR["Approval dialog"]
 ```
 
@@ -1400,6 +1406,28 @@ If the turn is tainted, External and Destructive actions do not reach this dialo
 │ 12:12:44  │ cloud.req    │ provider X · 2.3k tokens  │ under cap     │
 └───────────┴──────────────┴───────────────────────────┴───────────────┘
 ```
+
+### 16.6 Command Center (primary view)
+
+![Command center concept](assets/ui-preview.svg)
+
+| Region | Content | Source of truth |
+| --- | --- | --- |
+| Voice core (centre) | State ring (idle, listening, thinking, speaking, muted), live waveform, current turn id, live transcript and spoken reply | Voice session and turn state (11, 6.5) |
+| System (left) | VRAM, CPU, RAM, resident models, TTFT | Host telemetry, `model_usage_logs` |
+| Devices (left) | Host and connected devices, transport, latency, cloud status and spend | `devices`, connector heartbeats, spend cap |
+| Safeguards (left) | Current turn taint, policy summary, kill switches for microphone, tools, remote access and cloud | Permission Engine, settings (9.3, 12.9) |
+| Memory in context (right) | Entries injected into the current turn, with scope, confirmation and source | Retrieval result of stage 2 (10.9) |
+| Activity (right) | Live, correlation-linked stream of tool calls, taint changes, policy decisions, memory changes, approvals | `activity_logs` |
+| Authorization (centre bottom) | Pending approval with action, target, taint, binding fingerprint, countdown | `approval_requests` (9.4) |
+| Command bar (bottom) | Text input, push-to-talk, shortcuts (hold Space, Esc to cancel, mute, command palette) | — |
+
+Rules:
+
+- Every value on screen comes from real state; no decorative or simulated telemetry.
+- Animation reflects state changes only and respects the OS "reduce motion" setting.
+- The text chat (16.2) remains available as a secondary view and for long answers; both views share the same turn.
+- Panels can be collapsed; the voice core and the authorization card are never hidden while an approval is pending.
 
 ## 17. Risks
 
