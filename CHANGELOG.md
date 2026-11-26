@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- Plan v0.5.2: frontend decided as Svelte 5 (ADR 0011, OD-5 closed); streaming-rendering rules for the chat UI (Section 16.0).
+
 ### Added
 
 - Project governance: `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, pull request template, code owners, documentation index and glossary.

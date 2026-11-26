@@ -2,10 +2,11 @@
 
 | Field         | Value                                                |
 | ------------- | ---------------------------------------------------- |
-| Status        | Draft v0.5.1 — for review                            |
+| Status        | Draft v0.5.2 — for review                            |
 | Owner         | Eren                                                 |
 | Last updated  | 2026-11-26                                           |
 | Document type | Plan (no implementation in this phase)               |
+| Changes v0.5.2 | Frontend decided: Svelte 5 (OD-5 closed, ADR 0011); streaming-rendering rules for the chat UI (16.0) |
 | Changes v0.5.1 | Read-tool size and count limits (9.7); threat model linked from Section 12. See `CHANGELOG.md` for earlier versions |
 | Changes v0.5  | Fixes from external review of v0.4: device connectivity without listening ports (6.3), turn pipeline and cross-cutting concerns (6.5, 6.9), content-based taint (9.3), approval binding against TOCTOU (9.4), hybrid memory retrieval (10.9), consistent voice budget (11.2), data model aligned with ER diagram (13.1); project now follows `agent-playbook` (19) |
 
@@ -270,7 +271,7 @@ Intent classification and multi-step planning are **not** separate stages in v0.
 sequenceDiagram
     autonumber
     actor U as User
-    participant UI as React UI
+    participant UI as Svelte UI
     participant API as conversation.api
     participant APP as conversation.application
     participant MEM as memory
@@ -312,9 +313,10 @@ sequenceDiagram
 | Local inference | Ollama via `ai-sdk-ollama` provider | Phase 1 | Keep-alive control and tool-call handling; replaceable by OpenAI-compatible endpoint or llama.cpp server |
 | Embeddings fallback | Hugging Face Text Embeddings Inference (container) | Phase 2 | Serves Turkish-specific encoders not available in Ollama |
 | MCP | Official TypeScript MCP SDK v2 (spec 2026-07-28) | Phase 2 | Tier 1 SDK; used for both client (backend) and device servers |
-| Frontend | React + Vite | Phase 1 | Largest ecosystem for chat and streaming UIs; AI SDK UI hooks (see OD-5) |
-| UI components | shadcn/ui (copied source) + Tailwind CSS | Phase 1 | Components live in the repo, not as runtime dependencies |
-| Server state | TanStack Query | Phase 1 | Caching and SSE-friendly data fetching |
+| Frontend | Svelte 5 (runes) + SvelteKit with the static adapter (SPA) + Vite | Phase 1 | Fine-grained reactivity and the smallest runtime among the candidates; official `@ai-sdk/svelte`; fits the Tauri webview (6.7.1, ADR 0011) |
+| UI components | shadcn-svelte (copied source) + Tailwind CSS | Phase 1 | Components live in the repo, not as runtime dependencies |
+| Client state | Svelte runes and a small typed API client generated from `packages/contracts` | Phase 1 | No global store or query library until a second use appears |
+| Streaming Markdown | Block-level incremental renderer + DOMPurify | Phase 1 | Rendering cost per token stays constant (16.0) |
 | Desktop shell | Tauri 2 | Phase 3 | Small footprint; backend bundled as a compiled Node sidecar on the host |
 | Voice | LiveKit Agents (Node.js) + self-hosted LiveKit server | Phase 5 | Same language; WebRTC transport included; measured against alternatives |
 | Testing | Vitest, Testcontainers (Node), Playwright | Phase 0–1 | Unit, integration with real PostgreSQL, end-to-end UI |
@@ -341,6 +343,21 @@ Three stacks were compared for this project and this developer.
 | Desktop packaging with Tauri | JVM sidecar, heavy | Compiled Node sidecar | Frozen Python sidecar |
 
 **Decision: B.** The deciding factors are one language across every component, a Tier 1 MCP SDK on the current spec, the most mature provider-agnostic LLM toolkit, and a voice path that does not require a second language. ML-heavy pieces that are weak in TypeScript (Turkish embeddings, STT) are consumed as prebuilt services, not written in-process.
+
+#### 6.7.1 Frontend framework
+
+The owner set no language preference; the choice is made on performance and fit. The chat UI is dominated by one workload — appending streamed tokens to a growing message list — inside a desktop webview.
+
+| Criterion | React 19 | Angular 20 | Svelte 5 (chosen) | SolidJS |
+| --- | --- | --- | --- | --- |
+| Update model | Component re-render + VDOM diff (compiler-memoised) | Signals (zoneless) | Compiled fine-grained updates (runes) | Runtime signals |
+| js-framework-benchmark position | Behind signal-based frameworks | Middle | Top tier, close to vanilla JS | Top tier, close to vanilla JS |
+| Runtime size | Largest of the four | Large | Smallest | Very small |
+| Official AI SDK UI package | Yes (most complete) | Yes | Yes | Community only |
+| Ecosystem for chat UIs | Largest | Medium | Medium | Small |
+| Tauri fit | Good | Good | Very good (common Tauri template) | Good |
+
+Svelte 5 combines top-tier rendering performance and the smallest runtime with an official AI SDK package; SolidJS is comparable on speed but lacks official AI SDK support. React's larger ecosystem does not outweigh its per-token re-render model for this workload. Benchmarks are re-checked against the live js-framework-benchmark results before Phase 1; the framework is behind the same REST/SSE contract, so the UI can be replaced without backend changes.
 
 **Accepted costs:** the highest supply-chain exposure of the three (mitigated by Section 6.8), and less backend experience in Node than in Java (mitigated by NestJS, whose module/DI/guard model mirrors Spring). If either cost proves too high in Phase 0–1, option A remains viable because all AI and storage access is behind ports. Recorded as ADR 0001.
 
@@ -1214,7 +1231,7 @@ Phases 0–2 (highlighted) make up v0.1. No phase after Phase 2 starts until the
 - `conversation` and `ai` modules; Ollama adapter and one cloud adapter behind the ports.
 - SSE streaming, history, manual model selection.
 - System prompt and persona versioned in the repository.
-- Minimal React chat screen on localhost.
+- Minimal Svelte chat screen on localhost, using the streaming-rendering rules in 16.0.
 - Model usage logging and spend cap.
 - Model evaluation baseline recorded.
 
@@ -1271,6 +1288,17 @@ Phases 0–2 (highlighted) make up v0.1. No phase after Phase 2 starts until the
 - Monitoring and error reporting; installers; backup/restore drills; external security review; per-server review process for any third-party MCP server; optional VPS.
 
 ## 16. UI Sketches (v0.1)
+
+### 16.0 Streaming Rendering Rules
+
+The common performance failure in LLM chat UIs is re-parsing and re-rendering the whole accumulated Markdown on every token, which makes long answers and long conversations progressively slower. This is a rendering-architecture problem independent of the framework, so it is fixed by rules:
+
+1. **Block-level incremental rendering.** The streaming message is split into Markdown blocks; completed blocks are rendered once and never re-parsed; only the last, open block is updated per token.
+2. **Batch updates per animation frame.** Tokens arriving within one frame are applied together.
+3. **Window long conversations.** Only messages near the viewport are rendered; older ones are virtualised.
+4. **Sanitise rendered HTML** with DOMPurify before insertion; model output is untrusted (9.5).
+5. **Defer heavy blocks.** Syntax highlighting and diagrams render after their block closes.
+6. **Measure.** Frame time and input latency during a 2,000-token answer are part of the Phase 1 baseline.
 
 Low-fidelity wireframes to fix layout and information content, not visual design. Design direction: dark theme by default, anthracite background, electric-blue accent, minimal animation, distinct visual states for listening, thinking and speaking.
 
@@ -1402,7 +1430,7 @@ If the turn is tainted, External and Destructive actions do not reach this dialo
 | OD-2 | Voice mode: cloud real-time, cascaded cloud, or local — decided by measurement. | Phase 5 |
 | OD-3 | Host the Mac device connector inside the Tauri app, or as a standalone background process. | Phase 3 |
 | OD-4 | Initial cloud provider and model. | Phase 1 |
-| OD-5 | Frontend framework: React or Angular. AI SDK UI hooks alone do not justify React; existing Angular expertise lowers delivery cost. Decide before Phase 1 by building the chat screen spike in the chosen framework. | Phase 1 |
+| OD-5 | ~~Frontend framework~~ — **closed**: Svelte 5 (6.7.1, ADR 0011). | — |
 | OD-6 | Final embedding model, from the recall test (Sec. 14.3). | Phase 2 |
 | OD-7 | Reuse an existing chat front end (e.g. Open WebUI) during early phases, or keep a minimal custom UI from the start. | Phase 1 |
 
@@ -1434,7 +1462,7 @@ MELL-specific rules that the playbook does not cover:
 mell-assistant/
 ├── apps/
 │   ├── backend/               NestJS modular monolith
-│   ├── ui/                    React + Vite (+ src-tauri from Phase 3)
+│   ├── ui/                    Svelte 5 + SvelteKit static + Vite (+ src-tauri from Phase 3)
 │   └── mcp-device/            first-party device MCP server (one codebase,
 │                              platform adapters for Windows and macOS)
 ├── packages/
@@ -1477,6 +1505,7 @@ Recorded in `docs/adr/` using the playbook ADR format. Accepted ADRs are immutab
 | [0008](adr/0008-authenticated-localhost-loopback-services.md) | Authenticated localhost backend and loopback-only services |
 | [0009](adr/0009-device-connectivity-without-listening-ports.md) | Device connectivity without listening ports |
 | [0010](adr/0010-bind-approvals-to-verified-fingerprint.md) | Bind approvals to a verified fingerprint |
+| [0011](adr/0011-svelte-5-frontend.md) | Svelte 5 for the frontend |
 
 ## Appendix A. References
 
@@ -1519,3 +1548,7 @@ Recorded in `docs/adr/` using the playbook ADR format. Accepted ADRs are immutab
 - Open WebUI — *Open WebUI & LibreChat* — <https://docs.openwebui.com/alternatives/librechat>
 - PostgreSQL — *Text search: psql support (built-in snowball stemmers incl. `turkish_stem`)* — <https://www.postgresql.org/docs/18/textsearch-psql.html>
 - agent-playbook — project rule library this repository follows — <https://github.com/eerenyilmazz/agent-playbook>
+- AI SDK — *AI SDK UI overview (framework support: React, Svelte, Vue, Angular; SolidJS community)* — <https://ai-sdk.dev/docs/ai-sdk-ui/overview>
+- js-framework-benchmark — live results — <https://krausest.github.io/js-framework-benchmark/>
+- Chrome for Developers — *Best practices to render streamed LLM responses* — <https://developer.chrome.com/docs/ai/render-llm-responses>
+- AI SDK — *Markdown chatbot with memoization* — <https://ai-sdk.dev/resources/recipes/next/markdown-chatbot-with-memoization>
