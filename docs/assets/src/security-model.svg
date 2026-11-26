@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="380" viewBox="0 0 1280 380" role="img" aria-labelledby="t d">
+  <title id="t">Mell security model</title>
+  <desc id="d">The lethal trifecta of private data, untrusted content and external communication; Mell blocks external communication while a turn is tainted. Six defence layers: permission engine, content-based taint, approval binding, pinned tool definitions, no listening ports, supply-chain controls.</desc>
+  <style>
+    .serif { font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif; }
+    .sans  { font-family: 'Instrument Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
+    .mono  { font-family: 'Geist Mono', 'SF Mono', Consolas, 'Liberation Mono', monospace; }
+    .t1 { fill: #EEEAE2; } .t2 { fill: #A39E93; } .t3 { fill: #6E6A62; } .acc { fill: #FF5A1F; }
+  </style>
+  <rect width="1280" height="380" rx="14" fill="#111110"/>
+  <text x="48" y="48" class="mono t3" style="font-size:11px;letter-spacing:1.6px">THE LETHAL TRIFECTA</text>
+  <text x="520" y="48" class="mono t3" style="font-size:11px;letter-spacing:1.6px">DEFENCE IN DEPTH</text>
+  <path d="M48 66H456M520 66H1232" stroke="#2A2825"/>
+
+  <!-- trifecta -->
+  <path d="M252 118L120 300" stroke="#3A3733" stroke-width="1.5"/>
+  <path d="M252 118L384 300" stroke="#FF5A1F" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <path d="M120 300H384" stroke="#FF5A1F" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <circle cx="252" cy="118" r="40" fill="#161513" stroke="#A39E93"/>
+  <text x="252" y="114" text-anchor="middle" class="sans t1" style="font-size:14px">Private</text>
+  <text x="252" y="132" text-anchor="middle" class="sans t1" style="font-size:14px">data</text>
+  <circle cx="120" cy="300" r="40" fill="#161513" stroke="#A39E93"/>
+  <text x="120" y="296" text-anchor="middle" class="sans t1" style="font-size:14px">Untrusted</text>
+  <text x="120" y="314" text-anchor="middle" class="sans t1" style="font-size:14px">content</text>
+  <circle cx="384" cy="300" r="40" fill="#161513" stroke="#FF5A1F" stroke-dasharray="4 4"/>
+  <text x="384" y="296" text-anchor="middle" class="sans t2" style="font-size:14px">External</text>
+  <text x="384" y="314" text-anchor="middle" class="sans t2" style="font-size:14px">comms</text>
+  <g transform="translate(418 266)"><circle r="11" fill="#111110" stroke="#FF5A1F" stroke-width="1.5"/><path d="M-4.5 -4.5L4.5 4.5M4.5 -4.5L-4.5 4.5" stroke="#FF5A1F" stroke-width="1.6" stroke-linecap="round"/></g>
+  <text x="252" y="364" text-anchor="middle" class="mono acc" style="font-size:11.5px;letter-spacing:1.2px">BLOCKED WHILE A TURN IS TAINTED</text>
+  <path d="M488 66V350" stroke="#2A2825"/>
+
+  <!-- layers: 2 columns x 3 rows -->
+  <g>
+    <text x="520" y="106" class="mono acc" style="font-size:12px">01</text>
+    <text x="556" y="106" class="serif t1" style="font-size:25px">Permission engine</text>
+    <text x="556" y="130" class="sans t2" style="font-size:14px">The model proposes; deterministic code decides.</text>
+
+    <text x="900" y="106" class="mono t3" style="font-size:12px">02</text>
+    <text x="936" y="106" class="serif t1" style="font-size:25px">Content-based taint</text>
+    <text x="936" y="130" class="sans t2" style="font-size:14px">Any file, page or document taints the turn.</text>
+
+    <text x="520" y="200" class="mono t3" style="font-size:12px">03</text>
+    <text x="556" y="200" class="serif t1" style="font-size:25px">Approval binding</text>
+    <text x="556" y="224" class="sans t2" style="font-size:14px">Single use, re-verified: what runs is what you approved.</text>
+
+    <text x="900" y="200" class="mono t3" style="font-size:12px">04</text>
+    <text x="936" y="200" class="serif t1" style="font-size:25px">Pinned tools</text>
+    <text x="936" y="224" class="sans t2" style="font-size:14px">First-party only; changes disable the tool.</text>
+
+    <text x="520" y="294" class="mono t3" style="font-size:12px">05</text>
+    <text x="556" y="294" class="serif t1" style="font-size:25px">No listening ports</text>
+    <text x="556" y="318" class="sans t2" style="font-size:14px">Loopback services; devices connect outbound.</text>
+
+    <text x="900" y="294" class="mono t3" style="font-size:12px">06</text>
+    <text x="936" y="294" class="serif t1" style="font-size:25px">Supply chain</text>
+    <text x="936" y="318" class="sans t2" style="font-size:14px">Lockfile only, no install scripts, pinned actions.</text>
+  </g>
+  <path d="M520 158H1232M520 252H1232" stroke="#2A2825"/>
+</svg>

@@ -6,7 +6,7 @@
 | Owner         | Eren                                                 |
 | Last updated  | 2026-11-26                                           |
 | Document type | Plan (no implementation in this phase)               |
-| Changes v0.5.3 | UI design direction changed from a chat layout to a voice-first command center (16, 16.6) |
+| Changes v0.5.3 | UI design direction: calm command surface with an editorial thread and context column; design tokens; anti-patterns to avoid (16, 16.6) |
 | Changes v0.5.2 | Frontend decided: Svelte 5 (OD-5 closed, ADR 0011); streaming-rendering rules for the chat UI (16.0) |
 | Changes v0.5.1 | Read-tool size and count limits (9.7); threat model linked from Section 12. See `CHANGELOG.md` for earlier versions |
 | Changes v0.5  | Fixes from external review of v0.4: device connectivity without listening ports (6.3), turn pipeline and cross-cutting concerns (6.5, 6.9), content-based taint (9.3), approval binding against TOCTOU (9.4), hybrid memory retrieval (10.9), consistent voice budget (11.2), data model aligned with ER diagram (13.1); project now follows `agent-playbook` (19) |
@@ -1301,7 +1301,18 @@ The common performance failure in LLM chat UIs is re-parsing and re-rendering th
 5. **Defer heavy blocks.** Syntax highlighting and diagrams render after their block closes.
 6. **Measure.** Frame time and input latency during a 2,000-token answer are part of the Phase 1 baseline.
 
-**Design direction: a voice-first command center, not a chat app.** The primary view (16.6) centres on a voice core and surrounds it with live system state, memory in context, activity and safeguards, so the user always sees what MELL knows, what it is doing and what it is allowed to do. Visual language: near-black background, cyan and blue accents, thin HUD-style panel frames, monospace telemetry, restrained motion that reflects real state (listening, thinking, speaking) rather than decoration. The design is original; no third-party characters, logos or film interfaces are reproduced.
+**Design direction: a calm command surface, not a chat app and not a sci-fi HUD.** The primary view (16.6) pairs an editorial thread — what you asked, what MELL did, what it needs from you — with a quiet context column showing what MELL knows, what it runs on and what it is allowed to do. The tone is professional and authoritative through restraint: typography, alignment and real data, not effects.
+
+| Token | Value | Use |
+| --- | --- | --- |
+| Background / surface | `#111110` / `#161513` | Warm near-black; no gradients |
+| Lines | `#2A2825`, `#3A3733` | Hairline separators instead of nested cards |
+| Text | `#EEEAE2` / `#A39E93` / `#6E6A62` | Primary, secondary, tertiary |
+| Accent | `#FF5A1F` (signal orange) | One accent only: listening state, the decision point, the primary action |
+| Status | `#8DB38B` ok · `#E2574C` blocked | Muted, never neon |
+| Type | Instrument Serif (utterances, headings) · Instrument Sans (UI) · Geist Mono (data, receipts) | Distinct roles; tabular data in mono |
+
+Explicitly avoided, because they read as generic AI output: cyan-on-dark palettes, purple-to-blue gradients, glows and glassmorphism, glowing orbs, chat bubbles, cards nested in cards, decorative or simulated telemetry. Motion only reflects real state changes and respects the OS "reduce motion" setting. The design is original; no third-party characters, logos or film interfaces are reproduced. Graphics are built from `docs/assets/src/` by `scripts/build-assets.py`, which embeds subset fonts (OFL).
 
 The wireframes in 16.1–16.5 fix information content for the secondary views; the visual reference for the primary view is the concept in 16.6.
 
@@ -1413,21 +1424,21 @@ If the turn is tainted, External and Destructive actions do not reach this dialo
 
 | Region | Content | Source of truth |
 | --- | --- | --- |
-| Voice core (centre) | State ring (idle, listening, thinking, speaking, muted), live waveform, current turn id, live transcript and spoken reply | Voice session and turn state (11, 6.5) |
-| System (left) | VRAM, CPU, RAM, resident models, TTFT | Host telemetry, `model_usage_logs` |
-| Devices (left) | Host and connected devices, transport, latency, cloud status and spend | `devices`, connector heartbeats, spend cap |
-| Safeguards (left) | Current turn taint, policy summary, kill switches for microphone, tools, remote access and cloud | Permission Engine, settings (9.3, 12.9) |
-| Memory in context (right) | Entries injected into the current turn, with scope, confirmation and source | Retrieval result of stage 2 (10.9) |
-| Activity (right) | Live, correlation-linked stream of tool calls, taint changes, policy decisions, memory changes, approvals | `activity_logs` |
-| Authorization (centre bottom) | Pending approval with action, target, taint, binding fingerprint, countdown | `approval_requests` (9.4) |
-| Command bar (bottom) | Text input, push-to-talk, shortcuts (hold Space, Esc to cancel, mute, command palette) | — |
+| Thread (left, wide) | Each turn as an editorial block: the user's words (serif), MELL's receipts as one-line mono entries (tool, target, result, taint, policy decision), then the answer | Turn, messages, activity (6.5) |
+| Decision point (in thread) | Pending approval with action, target, taint, binding fingerprint, expiry, *Deny* and *Allow once* | `approval_requests` (9.4) |
+| In context (right) | Memory entries injected into the current turn, with scope, confirmation and source | Retrieval result of stage 2 (10.9) |
+| System (right) | GPU memory, CPU, resident models, TTFT | Host telemetry, `model_usage_logs` |
+| Devices (right) | Host and connected devices, transport, cloud status and spend | `devices`, connector heartbeats, spend cap |
+| Safeguards (right) | Kill switches for microphone, tools, remote access and cloud | Settings (12.9) |
+| Command bar (bottom) | Listening state and live level, text input, shortcuts (hold Space to talk, Esc to stop) | Voice session (11) |
 
 Rules:
 
 - Every value on screen comes from real state; no decorative or simulated telemetry.
 - Animation reflects state changes only and respects the OS "reduce motion" setting.
 - The text chat (16.2) remains available as a secondary view and for long answers; both views share the same turn.
-- Panels can be collapsed; the voice core and the authorization card are never hidden while an approval is pending.
+- The context column can be collapsed; a pending decision is never hidden.
+- The full activity log is a separate view (16.5); the thread shows only the receipts of each turn.
 
 ## 17. Risks
 

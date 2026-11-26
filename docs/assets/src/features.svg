@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-labelledby="t d">
+  <title id="t">Three principles of Mell</title>
+  <desc id="d">Governed memory: every fact has a source and a state, nothing changes silently. Permission-gated actions: the model proposes, deterministic code decides. Local and Turkish-first: local models, chosen by Turkish evaluation; cloud is opt-in.</desc>
+  <style>
+    .serif { font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif; }
+    .sans  { font-family: 'Instrument Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
+    .mono  { font-family: 'Geist Mono', 'SF Mono', Consolas, 'Liberation Mono', monospace; }
+    .t1 { fill: #EEEAE2; } .t2 { fill: #A39E93; } .t3 { fill: #6E6A62; } .acc { fill: #FF5A1F; }
+  </style>
+  <rect width="1280" height="300" rx="14" fill="#111110"/>
+  <path d="M427 40V260M853 40V260" stroke="#2A2825"/>
+
+  <g transform="translate(48 0)">
+    <text x="0" y="62" class="mono acc" style="font-size:12px;letter-spacing:1.6px">01 · MEMORY</text>
+    <text x="0" y="112" class="serif t1" style="font-size:38px">Governed memory</text>
+    <g class="sans t2" style="font-size:16px">
+      <text x="0" y="152">Every fact keeps its source and state.</text>
+      <text x="0" y="178">Scoped spaces; nothing is overwritten</text>
+      <text x="0" y="200">or forgotten silently.</text>
+      <text x="0" y="226">Inspect, export or delete all of it.</text>
+    </g>
+  </g>
+  <g transform="translate(475 0)">
+    <text x="0" y="62" class="mono acc" style="font-size:12px;letter-spacing:1.6px">02 · ACTIONS</text>
+    <text x="0" y="112" class="serif t1" style="font-size:38px">Permission first</text>
+    <g class="sans t2" style="font-size:16px">
+      <text x="0" y="152">The model proposes; code decides.</text>
+      <text x="0" y="178">Untrusted content limits what a turn</text>
+      <text x="0" y="200">may do. Approvals bind to exact targets.</text>
+      <text x="0" y="226">Every step lands in an audit log.</text>
+    </g>
+  </g>
+  <g transform="translate(901 0)">
+    <text x="0" y="62" class="mono acc" style="font-size:12px;letter-spacing:1.6px">03 · LOCAL</text>
+    <text x="0" y="112" class="serif t1" style="font-size:38px">Yours, in Turkish</text>
+    <g class="sans t2" style="font-size:16px">
+      <text x="0" y="152">Local models on your own GPU,</text>
+      <text x="0" y="174">chosen by Turkish evaluation sets.</text>
+      <text x="0" y="200">Cloud is opt-in, filtered and capped.</text>
+      <text x="0" y="226">Ask for anything; capabilities grow.</text>
+    </g>
+  </g>
+</svg>

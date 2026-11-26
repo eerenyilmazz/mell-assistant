@@ -6,7 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
-- Plan v0.5.3: UI design direction changed to a voice-first command center (Section 16.6) with a new concept mockup.
+- Plan v0.5.3: UI design direction — calm command surface with an editorial thread and context column, design tokens and anti-patterns (Section 16); new concept mockup.
+- Visual identity for all README graphics: warm near-black, one signal-orange accent, Instrument Serif / Instrument Sans / Geist Mono embedded as subset fonts; sources in `docs/assets/src/`, built by `scripts/build-assets.py`.
 - README redesigned: capability cards, UI concept mockup, architecture, turn pipeline, security model and roadmap graphics (SVG), technology badges and a collapsible request-flow diagram.
 - Plan v0.5.2: frontend decided as Svelte 5 (ADR 0011, OD-5 closed); streaming-rendering rules for the chat UI (Section 16.0).
 

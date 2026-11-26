@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="840" viewBox="0 0 1280 840" role="img" aria-labelledby="t d">
+  <title id="t">MELL command center — interface concept</title>
+  <desc id="d">Concept of MELL's main screen. An editorial conversation thread on the left shows a request, the tool receipts for it, a delete blocked by policy, a spoken request to open IntelliJ IDEA and an approval prompt bound to that action. A right column lists memory in context, system state, devices and safeguards. A command bar at the bottom shows the listening state.</desc>
+  <style>
+    .serif { font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif; }
+    .sans  { font-family: 'Instrument Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
+    .mono  { font-family: 'Geist Mono', 'SF Mono', Consolas, 'Liberation Mono', monospace; }
+    .t1 { fill: #EEEAE2; } .t2 { fill: #A39E93; } .t3 { fill: #6E6A62; }
+    .acc { fill: #FF5A1F; } .ok { fill: #8DB38B; } .bad { fill: #E2574C; }
+    .label { font-size: 11px; letter-spacing: 1.6px; }
+  </style>
+
+  <rect width="1280" height="840" fill="#0B0B0A"/>
+  <rect x="24" y="24" width="1232" height="772" rx="14" fill="#111110" stroke="#2A2825"/>
+
+  <!-- top bar -->
+  <text x="52" y="62" class="serif t1" style="font-size:28px">Mell</text>
+  <text x="112" y="61" class="mono t3 label">COMMAND</text>
+  <text x="640" y="60" text-anchor="middle" class="mono t2" style="font-size:12px">local · qwen3:8b · scope MELL</text>
+  <text x="1228" y="54" text-anchor="end" class="mono t1" style="font-size:14px">13:25</text>
+  <text x="1228" y="70" text-anchor="end" class="mono t3" style="font-size:10.5px;letter-spacing:1.2px">PER 26 KAS</text>
+  <path d="M24 88H1256" stroke="#2A2825"/>
+  <path d="M880 88V716" stroke="#2A2825"/>
+
+  <!-- ===== thread ===== -->
+  <text x="52" y="128" class="mono t3 label">YOU · 13:24</text>
+  <text x="52" y="164" class="serif t1" style="font-size:30px">İndirilenler'deki eski PDF'leri bul ve sil.</text>
+
+  <text x="52" y="210" class="mono label acc">MELL</text>
+  <path d="M53 224V302" stroke="#3A3733" stroke-width="2"/>
+  <g class="mono" style="font-size:13px">
+    <path d="M69 233l3.5 3.5 6.5-7" fill="none" stroke="#8DB38B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><text x="92" y="238" class="t1">filesystem.list</text><text x="262" y="238" class="t2">Downloads · 3 files · 0.2 s</text>
+    <text x="70" y="264" class="acc">!</text><text x="92" y="264" class="t1">turn tainted</text><text x="262" y="264" class="t2">file names are untrusted content</text>
+    <text x="70" y="290" class="bad">×</text><text x="92" y="290" class="t1">filesystem.delete</text><text x="262" y="290" class="t2">blocked — destructive action in a tainted turn</text>
+  </g>
+  <text x="52" y="332" class="sans t1" style="font-size:16px">Üç eski PDF buldum. Silme bu turda engellendi; dosyaları listeden kendin seçersen</text>
+  <text x="52" y="356" class="sans t1" style="font-size:16px">istek temiz bir turda onayına gelir.</text>
+
+  <path d="M52 392H860" stroke="#1F1E1B"/>
+
+  <text x="52" y="428" class="mono t3 label">YOU · 13:25 · VOICE</text>
+  <text x="52" y="464" class="serif t1" style="font-size:30px">Windows'ta IntelliJ'i aç, MELL projesiyle çalışacağım.</text>
+
+  <text x="52" y="510" class="mono label acc">MELL</text>
+  <!-- approval -->
+  <rect x="52" y="526" width="640" height="166" rx="8" fill="#161513" stroke="#3A3733"/>
+  <rect x="52" y="526" width="3" height="166" fill="#FF5A1F"/>
+  <text x="76" y="560" class="sans t1" style="font-size:17px;font-weight:600">Allow MELL to launch IntelliJ IDEA?</text>
+  <text x="668" y="560" text-anchor="end" class="mono t2" style="font-size:12px">expires 4:58</text>
+  <g class="mono" style="font-size:12.5px">
+    <text x="76" y="592" class="t3">ACTION</text><text x="168" y="592" class="t1">app.launch</text>
+    <text x="76" y="614" class="t3">TARGET</text><text x="168" y="614" class="t1">Windows host · launch class</text>
+    <text x="76" y="636" class="t3">TURN</text><text x="168" y="636" class="ok">clean</text>
+    <text x="76" y="658" class="t3">BINDING</text><text x="168" y="658" class="t2">a91c · 3e07 · single use</text>
+  </g>
+  <rect x="484" y="644" width="80" height="32" rx="6" fill="none" stroke="#3A3733"/>
+  <text x="524" y="665" text-anchor="middle" class="sans t1" style="font-size:14px;font-weight:500">Deny</text>
+  <rect x="574" y="644" width="102" height="32" rx="6" fill="#FF5A1F"/>
+  <text x="625" y="665" text-anchor="middle" class="sans" style="font-size:14px;font-weight:600;fill:#140A04">Allow once</text>
+
+  <!-- ===== right column ===== -->
+  <text x="904" y="128" class="mono t3 label">IN CONTEXT</text>
+  <text x="1228" y="128" text-anchor="end" class="mono t3" style="font-size:11px">3 of 42</text>
+  <g class="sans" style="font-size:14.5px">
+    <text x="904" y="162" class="t1">Prefers Java 21 for new projects</text>
+    <text x="904" y="181" class="mono t3" style="font-size:11px">global · confirmed · 26 Kas</text>
+    <text x="904" y="214" class="t1">IDE of choice is IntelliJ IDEA</text>
+    <text x="904" y="233" class="mono t3" style="font-size:11px">global · confirmed · 12 Kas</text>
+    <text x="904" y="266" class="t1">MELL backend is a NestJS monolith</text>
+    <text x="904" y="285" class="mono t3" style="font-size:11px">MELL · confirmed · ADR 0001</text>
+  </g>
+  <path d="M904 310H1228" stroke="#2A2825"/>
+
+  <text x="904" y="340" class="mono t3 label">SYSTEM</text>
+  <g class="mono" style="font-size:12.5px">
+    <text x="904" y="368" class="t2">GPU</text><text x="1228" y="368" text-anchor="end" class="t1">7.4 / 12 GB</text>
+    <rect x="904" y="376" width="324" height="2" fill="#2A2825"/><rect x="904" y="376" width="200" height="2" fill="#EEEAE2"/>
+    <text x="904" y="400" class="t2">CPU</text><text x="1228" y="400" text-anchor="end" class="t1">18 %</text>
+    <text x="904" y="422" class="t2">Chat model</text><text x="1228" y="422" text-anchor="end" class="t1">qwen3:8b</text>
+    <text x="904" y="444" class="t2">Embeddings</text><text x="1228" y="444" text-anchor="end" class="t1">bge-m3</text>
+    <text x="904" y="466" class="t2">TTFT p50</text><text x="1228" y="466" text-anchor="end" class="t1">410 ms</text>
+  </g>
+  <path d="M904 488H1228" stroke="#2A2825"/>
+
+  <text x="904" y="518" class="mono t3 label">DEVICES</text>
+  <g class="mono" style="font-size:12.5px">
+    <circle cx="908" cy="542" r="3.5" fill="#8DB38B"/><text x="920" y="546" class="t1">Windows host</text><text x="1228" y="546" text-anchor="end" class="t3">stdio</text>
+    <circle cx="908" cy="566" r="3.5" fill="#8DB38B"/><text x="920" y="570" class="t1">MacBook Air</text><text x="1228" y="570" text-anchor="end" class="t3">connector · no port</text>
+    <circle cx="908" cy="590" r="3.5" fill="none" stroke="#6E6A62"/><text x="920" y="594" class="t2">Cloud model</text><text x="1228" y="594" text-anchor="end" class="t3">off · $0 / $10</text>
+  </g>
+  <path d="M904 616H1228" stroke="#2A2825"/>
+
+  <text x="904" y="646" class="mono t3 label">SAFEGUARDS</text>
+  <g class="sans" style="font-size:13.5px">
+    <text x="904" y="676" class="t1">Microphone</text>
+    <rect x="1000" y="664" width="30" height="16" rx="8" fill="#EEEAE2"/><circle cx="1022" cy="672" r="6" fill="#111110"/>
+    <text x="1066" y="676" class="t1">Tools</text>
+    <rect x="1198" y="664" width="30" height="16" rx="8" fill="#EEEAE2"/><circle cx="1220" cy="672" r="6" fill="#111110"/>
+    <text x="904" y="704" class="t1">Remote</text>
+    <rect x="1000" y="692" width="30" height="16" rx="8" fill="#EEEAE2"/><circle cx="1022" cy="700" r="6" fill="#111110"/>
+    <text x="1066" y="704" class="t2">Cloud</text>
+    <rect x="1198" y="692" width="30" height="16" rx="8" fill="none" stroke="#3A3733"/><circle cx="1207" cy="700" r="6" fill="#6E6A62"/>
+  </g>
+
+  <!-- ===== command bar ===== -->
+  <path d="M24 716H1256" stroke="#2A2825"/>
+  <circle cx="60" cy="756" r="5" fill="#FF5A1F"/>
+  <text x="76" y="760" class="mono t1" style="font-size:12px;letter-spacing:1.2px">LISTENING</text>
+  <g fill="#6E6A62">
+    <rect x="168" y="752" width="2" height="8"/><rect x="174" y="748" width="2" height="16"/><rect x="180" y="744" width="2" height="24"/>
+    <rect x="186" y="749" width="2" height="14"/><rect x="192" y="741" width="2" height="30"/><rect x="198" y="746" width="2" height="20"/>
+    <rect x="204" y="751" width="2" height="10"/><rect x="210" y="745" width="2" height="22"/>
+  </g>
+  <g fill="#FF5A1F">
+    <rect x="216" y="740" width="2" height="32"/><rect x="222" y="746" width="2" height="20"/><rect x="228" y="750" width="2" height="12"/>
+  </g>
+  <rect x="264" y="736" width="740" height="40" rx="8" fill="#161513" stroke="#2A2825"/>
+  <text x="284" y="761" class="sans t3" style="font-size:14.5px">Ask or command anything</text>
+  <g class="mono" style="font-size:11px">
+    <rect x="1024" y="744" width="52" height="24" rx="5" fill="none" stroke="#3A3733"/><text x="1050" y="760" text-anchor="middle" class="t2">Space</text>
+    <text x="1084" y="760" class="t3">talk</text>
+    <rect x="1124" y="744" width="38" height="24" rx="5" fill="none" stroke="#3A3733"/><text x="1143" y="760" text-anchor="middle" class="t2">Esc</text>
+    <text x="1170" y="760" class="t3">stop</text>
+  </g>
+
+  <text x="1256" y="822" text-anchor="end" class="mono t3" style="font-size:10.5px;letter-spacing:1.2px">CONCEPT — NOT A SCREENSHOT</text>
+</svg>
