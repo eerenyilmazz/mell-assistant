@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- README redesigned: capability cards, UI concept mockup, architecture, turn pipeline, security model and roadmap graphics (SVG), technology badges and a collapsible request-flow diagram.
 - Plan v0.5.2: frontend decided as Svelte 5 (ADR 0011, OD-5 closed); streaming-rendering rules for the chat UI (Section 16.0).
 
 ### Added

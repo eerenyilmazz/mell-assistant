@@ -3,137 +3,154 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-planning-f59e0b?style=flat-square" alt="Status: planning">
-  <img src="https://img.shields.io/badge/plan-v0.5-3b82f6?style=flat-square" alt="Plan v0.5">
-  <img src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript strict">
-  <img src="https://img.shields.io/badge/models-local--first-10b981?style=flat-square" alt="Local-first models">
-  <img src="https://img.shields.io/badge/MCP-2026--07--28-8b5cf6?style=flat-square" alt="MCP spec 2026-07-28">
+  <a href="docs/PLAN.md"><img src="https://img.shields.io/badge/status-planning-f59e0b?style=for-the-badge" alt="Status: planning"></a>
+  <a href="docs/PLAN.md"><img src="https://img.shields.io/badge/plan-v0.5.2-3b82f6?style=for-the-badge" alt="Plan v0.5.2"></a>
+  <a href="docs/adr/"><img src="https://img.shields.io/badge/ADRs-11-8b5cf6?style=for-the-badge" alt="11 decision records"></a>
+  <a href="https://github.com/eerenyilmazz/mell-assistant/actions/workflows/docs.yml"><img src="https://github.com/eerenyilmazz/mell-assistant/actions/workflows/docs.yml/badge.svg" alt="Docs CI" height="28"></a>
 </p>
 
 <p align="center">
-  <a href="docs/PLAN.md"><b>Project plan</b></a> ·
-  <a href="docs/PLAN.md#3-prior-art-and-lessons-learned">Prior art</a> ·
-  <a href="docs/PLAN.md#6-architecture">Architecture</a> ·
-  <a href="docs/PLAN.md#15-delivery-phases">Roadmap</a>
+  <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/NestJS-backend-E0234E?style=flat-square&logo=nestjs&logoColor=white" alt="NestJS">
+  <img src="https://img.shields.io/badge/Svelte_5-UI-FF3E00?style=flat-square&logo=svelte&logoColor=white" alt="Svelte 5">
+  <img src="https://img.shields.io/badge/Tauri_2-desktop-24C8DB?style=flat-square&logo=tauri&logoColor=white" alt="Tauri 2">
+  <img src="https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL with pgvector">
+  <img src="https://img.shields.io/badge/Ollama-local_models-000000?style=flat-square&logo=ollama&logoColor=white" alt="Ollama">
+  <img src="https://img.shields.io/badge/MCP-2026--07--28-6E56CF?style=flat-square" alt="MCP 2026-07-28">
+</p>
+
+<h3 align="center">A local-first personal AI assistant that remembers responsibly<br>and acts on your computers only with permission.</h3>
+
+<p align="center">
+  <a href="#why-mell">Why MELL</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#how-a-turn-works">How a turn works</a> ·
+  <a href="#security-model">Security</a> ·
+  <a href="#roadmap">Roadmap</a> ·
+  <a href="docs/PLAN.md"><b>Full plan</b></a>
 </p>
 
 ---
 
-## Overview
-
-**MELL** is a personal AI assistant platform designed to run primarily on the user's own hardware. It is not a chatbot with a microphone attached; it is built around three capabilities that existing assistants handle poorly:
-
-| | Capability | What it means |
-| --- | --- | --- |
-| 🧠 | **Governed memory** | Every remembered fact has a source, a confirmation state, a validity window and a scope. Nothing is stored, changed or forgotten silently. The user can inspect, export and delete all of it. |
-| 🛡️ | **Permission-gated actions** | The model only *proposes* actions on the user's machines. A deterministic policy engine outside the model decides, with full audit and explicit approval for anything destructive or external. |
-| 🇹🇷 | **Turkish-first interaction** | Models, embeddings and voice components are selected by measurements on Turkish, not by English benchmarks. |
-
-## Status
-
 > [!NOTE]
-> MELL is in the **planning phase**. There is no runnable code yet. The current deliverable is the [project plan](docs/PLAN.md), which defines scope, architecture, security model and delivery phases.
+> **MELL is in the planning phase.** There is no runnable code yet. The design, decisions and threat model are complete enough to start Phase 0; see the [project plan](docs/PLAN.md).
 
-## Design Principles
+## Why MELL
 
-- **Small, reliable core first.** Voice, multi-agent orchestration and proactive features come only after the core passes its evaluation gates.
-- **Security is enforced in code, not in prompts.** Model output, web content, documents and tool results are treated as untrusted data.
-- **Break the lethal trifecta.** A turn that has seen untrusted content cannot perform external or destructive actions.
-- **Local by default.** Local models first; cloud models are opt-in, policy-filtered and spend-capped.
-- **Measure, then decide.** Model, embedding and voice choices are made with versioned evaluation sets.
+Most assistants either forget everything or remember things you never asked them to, and agents that can touch your files tend to trust whatever text they read. MELL is designed around the opposite defaults.
+
+<p align="center">
+  <img src="docs/assets/features.svg" alt="Governed memory, permission-gated actions, Turkish-first and local-first" width="100%">
+</p>
+
+<p align="center">
+  <img src="docs/assets/ui-preview.svg" alt="Concept mockup of the MELL chat screen with memory chips, a tainted turn, a blocked delete and an approval card" width="100%">
+  <br>
+  <sub><i>Concept mockup of the planned chat screen — memory you can undo, tool calls you can see, a delete blocked by policy and an approval bound to its exact target.</i></sub>
+</p>
 
 ## Architecture
 
+<p align="center">
+  <img src="docs/assets/architecture.svg" alt="Architecture: Windows host with UI, NestJS backend, Ollama, PostgreSQL and host MCP server; Mac with UI client and outbound device connector; optional cloud model" width="100%">
+</p>
+
+| Principle | In practice |
+| --- | --- |
+| **One host, one source of truth** | The backend on the Windows host holds all state, credentials and policy. |
+| **Nothing listens that doesn't have to** | Ollama and PostgreSQL bind to loopback; device MCP servers open no port at all. |
+| **Modular monolith** | NestJS modules with enforced boundaries — no microservices to operate. |
+| **Replaceable models** | All model access goes through internal ports; local by default, cloud opt-in. |
+
+<details>
+<summary><b>Request flow (sequence diagram)</b></summary>
+
 ```mermaid
-flowchart LR
-    subgraph HOST["Primary host (Windows)"]
-        direction TB
-        UI["UI<br/>Svelte · Tauri"]
-        BE["Backend<br/>NestJS modular monolith"]
-        PE{{"Permission Engine"}}
-        OLL["Ollama<br/>loopback only"]
-        DB[("PostgreSQL<br/>+ pgvector")]
-        MCPW["Device MCP server"]
-        UI --> BE
-        BE --> OLL
-        BE --> DB
-        BE --> PE --> MCPW
-    end
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant UI as Svelte UI
+    participant BE as Backend
+    participant MEM as Memory
+    participant PE as Permission Engine
+    participant OL as Ollama
+    participant D as Device MCP
 
-    subgraph MAC["Secondary device (macOS)"]
-        UIM["UI client"]
-        MCPM["Device MCP server"]
-    end
-
-    CLOUD["Cloud model<br/>opt-in · capped"]
-
-    UIM -->|private network| BE
-    PE -->|private network| MCPM
-    BE -.->|data policy| CLOUD
+    U->>UI: Message (Turkish)
+    UI->>BE: POST message · Idempotency-Key · Correlation-Id
+    BE->>MEM: Hybrid retrieval (scope + global)
+    MEM-->>BE: Confirmed facts as data
+    BE->>OL: Stream with allowed tools
+    OL-->>BE: Tool proposal
+    BE->>PE: Evaluate (class, scope, taint)
+    PE->>D: Execute if allowed or approved
+    D-->>BE: Result (untrusted, taints turn)
+    BE->>OL: Continue with result
+    OL-->>UI: Tokens over SSE
 ```
 
-See [Section 6 of the plan](docs/PLAN.md#6-architecture) for trust boundaries, request flows and the full diagram set.
+</details>
 
-## Technology Stack
+## How a turn works
 
-| Layer | Choice |
-| --- | --- |
-| Language | TypeScript (`strict`) end-to-end |
-| Backend | Node.js LTS · NestJS (Fastify) · Zod |
-| Data | PostgreSQL · pgvector · Drizzle ORM |
-| AI | Vercel AI SDK behind internal ports · Ollama (local) · optional cloud provider |
-| Tools | Model Context Protocol — official TypeScript SDK, first-party servers only |
-| Frontend | Svelte 5 · SvelteKit (static SPA) · shadcn-svelte · Tailwind CSS |
-| Desktop | Tauri 2 |
-| Voice *(Phase 5)* | LiveKit Agents (Node.js), self-hosted |
-| Quality | Vitest · Testcontainers · Playwright · dependency-cruiser · OpenTelemetry |
+Every message goes through the same seven deterministic stages. The model decides *what to say*; code decides *what is allowed to happen*.
 
-The rationale and the alternatives considered (Java/Spring, Python) are in [Section 6.7](docs/PLAN.md#67-language-and-framework-selection).
+<p align="center">
+  <img src="docs/assets/turn-pipeline.svg" alt="Turn pipeline: intake, context, generate, policy, execute, respond, record, with a tool proposal loop" width="100%">
+</p>
+
+## Security model
+
+MELL holds personal data and can act on your machines, so security is part of the core design. The key idea: an agent with private data, untrusted content and a way to send data out can be turned against its user — so MELL removes the third capability whenever untrusted content is in play.
+
+<p align="center">
+  <img src="docs/assets/security-model.svg" alt="Lethal trifecta with external communication blocked while a turn is tainted, and six defence layers" width="100%">
+</p>
+
+Threats, mitigations and the tests that verify them: [threat model](docs/security/threat-model.md) (STRIDE per boundary, OWASP Top 10 for Agentic Applications 2026 mapping, abuse cases).
+
+## Technology stack
+
+| Layer | Choice | Why |
+| --- | --- | --- |
+| Language | TypeScript (`strict`), end-to-end | One language for backend, UI, MCP servers and desktop shell ([ADR 0001](docs/adr/0001-typescript-end-to-end-nestjs-monolith.md)) |
+| Backend | Node.js LTS · NestJS · Zod | Modules, DI and guards that mirror the layered design |
+| Data | PostgreSQL · pgvector · Drizzle | Facts, vectors and Turkish full-text in one store ([ADR 0002](docs/adr/0002-postgresql-pgvector-single-store.md)) |
+| AI | Vercel AI SDK behind internal ports · Ollama | Provider-agnostic; local models first ([ADR 0006](docs/adr/0006-manual-model-selection-first.md)) |
+| Tools | Model Context Protocol, official TypeScript SDK | First-party servers with pinned definitions ([ADR 0003](docs/adr/0003-first-party-mcp-servers.md)) |
+| UI | Svelte 5 · SvelteKit (static) · shadcn-svelte · Tailwind | Fine-grained updates for token streaming ([ADR 0011](docs/adr/0011-svelte-5-frontend.md)) |
+| Desktop | Tauri 2 | Small footprint on Windows and macOS |
+| Voice *(Phase 5)* | LiveKit Agents (Node.js), self-hosted | Same language, measured latency budget |
+| Quality | Vitest · Testcontainers · Playwright · dependency-cruiser · OpenTelemetry | Tests, architecture rules and per-stage traces |
 
 ## Roadmap
 
-```mermaid
-flowchart LR
-    P0["0 · Foundation"] --> P1["1 · Core chat"]
-    P1 --> P2["2 · Memory + first tools"]
-    P2 --> P3["3 · Second device + desktop"]
-    P2 --> P4["4 · Assisted memory + routing"]
-    P3 --> P5["5 · Voice"]
-    P3 --> P6["6 · Agents + automation"]
-    P4 --> P6
-    P4 --> P7["7 · Import"]
-    P5 --> P8["8 · Hardening"]
-    P6 --> P8
-    P7 --> P8
+<p align="center">
+  <img src="docs/assets/roadmap.svg" alt="Roadmap with nine phases; phases 0 to 2 form v0.1 followed by a quality gate" width="100%">
+</p>
 
-    classDef v01 fill:#1e3a8a,stroke:#3b82f6,color:#fff
-    class P0,P1,P2 v01
-```
+<details>
+<summary><b>What v0.1 includes</b></summary>
 
-Phases 0–2 form **v0.1**: local streaming chat, explicit memory with a Memory Center, and read-only device tools behind the permission engine. Each phase has explicit exit criteria in the [plan](docs/PLAN.md#15-delivery-phases).
+- Local Turkish chat with streaming, history, cancellation and idempotent requests
+- Explicit, scoped memory with a Memory Center (view, edit, export, delete)
+- Manual model selection; one resident local model plus embeddings
+- Read-only device tools (`filesystem.list`, `filesystem.read`, `system.status`) behind the Permission Engine
+- Activity log of every tool call, approval and memory change
+
+Exit criteria for each phase: [plan, Section 15](docs/PLAN.md#15-delivery-phases).
+
+</details>
 
 ## Documentation
 
-| Document | Contents |
-| --- | --- |
-| [`docs/PLAN.md`](docs/PLAN.md) | Scope, prior-art review, architecture, model strategy, permission model, memory design, voice, security, data model, evaluation, phases, risks |
-| `docs/adr/` *(planned)* | Architecture Decision Records |
-| `docs/benchmarks/` *(planned)* | Measured model, embedding and latency results |
-
-## Planned Repository Layout
-
-```text
-mell-assistant/
-├── apps/
-│   ├── backend/        NestJS modular monolith
-│   ├── ui/             Svelte 5 + SvelteKit (Tauri shell from Phase 3)
-│   └── mcp-device/     First-party device MCP server
-├── packages/
-│   └── contracts/      Shared Zod schemas and types
-├── infrastructure/     Docker Compose for PostgreSQL, Ollama and services
-├── eval/               Memory, model, tool-call and security evaluation sets
-└── docs/               Plan, ADRs, benchmarks
-```
+| | Document | What you'll find |
+| --- | --- | --- |
+| 📘 | [Project plan](docs/PLAN.md) | Scope, prior-art review, architecture, permission model, memory, voice, data model, evaluation, phases, risks |
+| 🧭 | [Decision records](docs/adr/) | Eleven ADRs with options, risks and rollback |
+| 🛡️ | [Threat model](docs/security/threat-model.md) | Assets, adversaries, STRIDE, OWASP Agentic Top 10, security tests |
+| 📖 | [Glossary](docs/GLOSSARY.md) | Taint, approval binding, turn pipeline and other terms |
+| 🗂️ | [Documentation index](docs/README.md) | Everything else, organised by what you need |
 
 ## Run
 
@@ -172,10 +189,12 @@ See [Non-Goals](docs/PLAN.md#42-non-goals-v01): microservices, model training, t
 
 Pull requests only; `main` is protected. Read [`CONTRIBUTING.md`](CONTRIBUTING.md). Decisions are recorded in [`docs/adr/`](docs/adr/). Report vulnerabilities as described in [`SECURITY.md`](SECURITY.md).
 
-## Security
-
-MELL is designed to hold personal data and act on the user's machines, so its security model is part of the core design rather than an add-on. The threat model, the trifecta rule, MCP tool-definition pinning, network binding rules and supply-chain controls are described in the plan ([Sections 9](docs/PLAN.md#9-tools-and-permission-model), [12](docs/PLAN.md#12-security-and-privacy) and [6.8](docs/PLAN.md#68-supply-chain-controls)).
-
 ## License
 
 Not licensed yet. Until a license is added, all rights are reserved by the author.
+
+---
+
+<p align="center">
+  <sub>Designed in the open · documentation-first · every decision recorded</sub>
+</p>

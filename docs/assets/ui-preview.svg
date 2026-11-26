@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="900" viewBox="0 0 1280 900" role="img" aria-labelledby="t d">
+  <title id="t">MELL user interface concept</title>
+  <desc id="d">Concept mockup of the MELL chat screen: sidebar with navigation and conversations, a Turkish conversation where a fact is saved to memory, a file listing marks the turn as tainted, a delete request is blocked by policy, and an approval card asks to launch IntelliJ IDEA.</desc>
+  <defs>
+    <linearGradient id="win" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0e131c"/><stop offset="1" stop-color="#0a0e15"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+  <style>
+    text { font-family: Inter, 'Segoe UI', 'Helvetica Neue', 'DejaVu Sans', Arial, sans-serif; }
+    .muted { fill: #64748b; font-size: 13px; }
+    .nav   { fill: #94a3b8; font-size: 14px; font-weight: 500; }
+    .navA  { fill: #f8fafc; font-size: 14px; font-weight: 600; }
+    .msg   { fill: #e2e8f0; font-size: 15px; }
+    .chipT { font-size: 12.5px; font-weight: 600; }
+    .h     { fill: #f8fafc; font-size: 15px; font-weight: 700; }
+  </style>
+
+  <rect width="1280" height="900" rx="22" fill="#05070b"/>
+  <!-- window -->
+  <rect x="30" y="26" width="1220" height="840" rx="16" fill="#000" filter="url(#shadow)"/>
+  <rect x="30" y="26" width="1220" height="840" rx="16" fill="url(#win)" stroke="#1f2937"/>
+  <!-- title bar -->
+  <path d="M46 26h1188a16 16 0 0 1 16 16v20H30V42a16 16 0 0 1 16-16z" fill="#0b0f16"/>
+  <circle cx="56" cy="44" r="6" fill="#ef4444" fill-opacity="0.8"/>
+  <circle cx="76" cy="44" r="6" fill="#f59e0b" fill-opacity="0.8"/>
+  <circle cx="96" cy="44" r="6" fill="#10b981" fill-opacity="0.8"/>
+  <text x="640" y="49" text-anchor="middle" class="muted">MELL</text>
+
+  <!-- sidebar -->
+  <path d="M30 62H280V866H46a16 16 0 0 1-16-16z" fill="#0b1018"/>
+  <text x="56" y="104" style="font-size:22px;font-weight:800;letter-spacing:4px;fill:#f8fafc">MELL</text>
+  <rect x="58" y="114" width="34" height="3" rx="1.5" fill="url(#accent)"/>
+
+  <rect x="46" y="140" width="218" height="38" rx="10" fill="#16233b"/>
+  <circle cx="68" cy="159" r="5" fill="#60a5fa"/>
+  <text x="84" y="164" class="navA">Chat</text>
+  <circle cx="68" cy="199" r="5" fill="#334155"/><text x="84" y="204" class="nav">Memory Center</text>
+  <circle cx="68" cy="239" r="5" fill="#334155"/><text x="84" y="244" class="nav">Activity</text>
+  <circle cx="68" cy="279" r="5" fill="#334155"/><text x="84" y="284" class="nav">Settings</text>
+
+  <text x="56" y="336" style="font-size:12px;font-weight:700;letter-spacing:1.5px;fill:#475569">CONVERSATIONS</text>
+  <text x="56" y="366" class="navA">MELL planı</text>
+  <text x="56" y="396" class="nav">Wick API</text>
+  <text x="56" y="426" class="nav">Haftalık notlar</text>
+
+  <rect x="46" y="772" width="218" height="74" rx="12" fill="#0f1520" stroke="#1f2937"/>
+  <circle cx="66" cy="796" r="5" fill="#10b981"/><text x="80" y="801" style="font-size:13px;fill:#cbd5e1">Windows host · online</text>
+  <circle cx="66" cy="824" r="5" fill="#10b981"/><text x="80" y="829" style="font-size:13px;fill:#cbd5e1">MacBook · connected</text>
+
+  <!-- header -->
+  <text x="310" y="104" style="font-size:18px;font-weight:700;fill:#f8fafc">MELL planı</text>
+  <g transform="translate(860 82)">
+    <rect width="170" height="32" rx="16" fill="#111827" stroke="#263246"/>
+    <circle cx="18" cy="16" r="5" fill="#10b981"/>
+    <text x="32" y="21" style="font-size:13px;font-weight:600;fill:#e2e8f0">qwen3:8b · local</text>
+  </g>
+  <g transform="translate(1042 82)">
+    <rect width="180" height="32" rx="16" fill="#111827" stroke="#263246"/>
+    <text x="16" y="21" style="font-size:13px;font-weight:600;fill:#e2e8f0">Scope: MELL + global</text>
+  </g>
+  <path d="M296 130H1234" stroke="#1a2230"/>
+
+  <!-- user message 1 -->
+  <rect x="742" y="154" width="480" height="48" rx="16" fill="#1d4ed8" fill-opacity="0.9"/>
+  <text x="764" y="184" class="msg" style="fill:#fff">Yeni projelerimde Java 21 kullanıyorum, bunu hatırla.</text>
+
+  <!-- assistant 1 -->
+  <circle cx="320" cy="238" r="14" fill="url(#accent)"/><text x="320" y="243" text-anchor="middle" style="font-size:12px;font-weight:800;fill:#0b0f17">M</text>
+  <text x="346" y="243" class="msg">Kaydettim. Yeni proje önerilerinde bunu dikkate alacağım.</text>
+  <g transform="translate(346 256)">
+    <rect width="372" height="28" rx="14" fill="#16233b" stroke="#2d4a7a"/>
+    <text x="14" y="19" class="chipT" style="fill:#93c5fd">Memory · confirmed · global · "Prefers Java 21"</text>
+    <text x="352" y="19" text-anchor="end" class="chipT" style="fill:#60a5fa">Undo</text>
+  </g>
+
+  <!-- user message 2 -->
+  <rect x="790" y="312" width="432" height="48" rx="16" fill="#1d4ed8" fill-opacity="0.9"/>
+  <text x="812" y="342" class="msg" style="fill:#fff">İndirilenler'deki eski PDF'leri bul ve sil.</text>
+
+  <!-- assistant 2 with tool chips -->
+  <circle cx="320" cy="396" r="14" fill="url(#accent)"/><text x="320" y="401" text-anchor="middle" style="font-size:12px;font-weight:800;fill:#0b0f17">M</text>
+  <g transform="translate(346 382)">
+    <rect width="420" height="28" rx="14" fill="#10291f" stroke="#1f6b4f"/>
+    <text x="14" y="19" class="chipT" style="fill:#6ee7b7">filesystem.list · Downloads · auto · 0.2 s</text>
+  </g>
+  <g transform="translate(776 382)">
+    <rect width="150" height="28" rx="14" fill="#2a1d08" stroke="#7c5a12"/>
+    <text x="14" y="19" class="chipT" style="fill:#fbbf24">turn tainted</text>
+  </g>
+  <g transform="translate(346 420)">
+    <rect width="580" height="28" rx="14" fill="#2a0f12" stroke="#7f1d1d"/>
+    <text x="14" y="19" class="chipT" style="fill:#fca5a5">filesystem.delete · blocked by policy: destructive action in a tainted turn</text>
+  </g>
+  <text x="346" y="480" class="msg">3 eski PDF buldum. Bu turda silme engellendi; dosyaları listeden</text>
+  <text x="346" y="504" class="msg">kendin seçersen silme isteği temiz bir turda onaya gelir.</text>
+
+  <!-- user 3 -->
+  <rect x="872" y="536" width="350" height="48" rx="16" fill="#1d4ed8" fill-opacity="0.9"/>
+  <text x="894" y="566" class="msg" style="fill:#fff">Windows'ta IntelliJ'i aç.</text>
+
+  <!-- input bar -->
+  <rect x="310" y="772" width="912" height="56" rx="16" fill="#0f1520" stroke="#263246"/>
+  <text x="334" y="806" style="font-size:15px;fill:#475569">MELL'e yaz…</text>
+  <circle cx="1150" cy="800" r="18" fill="#111827" stroke="#263246"/>
+  <rect x="1145" y="790" width="10" height="14" rx="5" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <path d="M1141 800a9 9 0 0 0 18 0M1150 809v4" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <circle cx="1196" cy="800" r="18" fill="url(#accent)"/>
+  <path d="M1189 800h13M1197 794l6 6-6 6" fill="none" stroke="#0b0f17" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="334" y="850" class="muted">TTFT 0.41 s · 1.2k tokens · cloud $0.00 / $10 · Esc to cancel</text>
+
+  <!-- approval card (assistant reply to message 3) -->
+  <circle cx="320" cy="620" r="14" fill="url(#accent)"/><text x="320" y="625" text-anchor="middle" style="font-size:12px;font-weight:800;fill:#0b0f17">M</text>
+  <rect x="346" y="606" width="456" height="150" rx="16" fill="#000" filter="url(#shadow)" opacity="0.6"/>
+  <rect x="346" y="606" width="456" height="150" rx="16" fill="#111827" stroke="#f59e0b" stroke-opacity="0.7" stroke-width="1.5"/>
+  <text x="370" y="638" class="h">Approval required</text>
+  <text x="778" y="638" text-anchor="end" style="font-size:12.5px;font-weight:600;fill:#fbbf24">expires 4:58</text>
+  <text x="370" y="666" style="font-size:13.5px;fill:#94a3b8">Action</text><text x="450" y="666" style="font-size:13.5px;fill:#e2e8f0;font-weight:600">app.launch · IntelliJ IDEA</text>
+  <text x="370" y="690" style="font-size:13.5px;fill:#94a3b8">Class</text><text x="450" y="690" style="font-size:13.5px;fill:#e2e8f0">Launch · not pre-approved</text>
+  <text x="370" y="714" style="font-size:13.5px;fill:#94a3b8">Device</text><text x="450" y="714" style="font-size:13.5px;fill:#e2e8f0">Windows host</text>
+  <text x="370" y="738" style="font-size:13.5px;fill:#94a3b8">Turn</text><text x="450" y="738" style="font-size:13.5px;fill:#6ee7b7">clean</text>
+  <rect x="566" y="704" width="96" height="32" rx="10" fill="#0f1520" stroke="#334155"/>
+  <text x="614" y="725" text-anchor="middle" style="font-size:13.5px;font-weight:600;fill:#cbd5e1">Reject</text>
+  <rect x="672" y="704" width="114" height="32" rx="10" fill="#2563eb"/>
+  <text x="729" y="725" text-anchor="middle" style="font-size:13.5px;font-weight:700;fill:#fff">Approve once</text>
+
+  <text x="1250" y="890" text-anchor="end" style="font-size:12px;fill:#475569">Concept mockup — not a screenshot</text>
+</svg>
