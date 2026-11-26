@@ -1,0 +1,17 @@
+{
+  // Markdown lint configuration for markdownlint-cli2 (pinned in AGENTS.md and CI).
+  "config": {
+    "default": true,
+    // Long lines are normal in tables and prose; wrapping hurts diffs of tables.
+    "MD013": false,
+    // README uses centred HTML for the banner and badges.
+    "MD033": false,
+    // README starts with the banner, not a heading.
+    "MD041": false,
+    // Repeated headings are allowed in different sections (e.g. "Exit criteria").
+    "MD024": { "siblings_only": true },
+    // Table column alignment is not enforced.
+    "MD060": false
+  },
+  "ignores": ["node_modules/**"]
+}
