@@ -10,6 +10,27 @@ All notable changes to this project are documented here. The format follows [Kee
 - Markdown lint and link checks in CI.
 - README sections required by agent-playbook: Run, Owner, Playbook, Overrides, Out of scope.
 
+## [plan-v0.5] - 2026-11-26
+
+### Changed
+
+- Device MCP servers open no listening port: stdio on the host, outbound authenticated connector on other devices.
+- Taint follows content provenance; file names and contents always taint.
+- Voice latency budget made consistent: acceptance 1.3 s P50, stretch 0.9 s.
+- Table list, ER diagram and schema notes aligned; `turns` table added.
+- Engineering rules defer to agent-playbook; ADRs move to the playbook format in `docs/adr/`.
+
+### Added
+
+- Turn pipeline; correlation ids, idempotency, cancellation, timeouts and recovery states.
+- Approval binding against time-of-check/time-of-use changes.
+- Hybrid memory retrieval (pgvector + PostgreSQL `turkish` full-text).
+
+### Security
+
+- Removed the "trusted directory" exception from taint rules.
+- Approvals are single-use and re-verified at execution.
+
 ## [plan-v0.4] - 2026-11-26
 
 ### Added
@@ -22,5 +43,6 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - Technology stack re-selected from Java/Spring Boot + Angular to TypeScript end-to-end (NestJS, AI SDK, MCP, React, Tauri).
 
-[Unreleased]: https://github.com/eerenyilmazz/mell-assistant/compare/2819c2d...HEAD
+[Unreleased]: https://github.com/eerenyilmazz/mell-assistant/compare/79ade8e...HEAD
+[plan-v0.5]: https://github.com/eerenyilmazz/mell-assistant/pull/2
 [plan-v0.4]: https://github.com/eerenyilmazz/mell-assistant/pull/1
