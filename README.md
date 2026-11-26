@@ -48,7 +48,7 @@
 flowchart LR
     subgraph HOST["Primary host (Windows)"]
         direction TB
-        UI["UI<br/>React · Tauri"]
+        UI["UI<br/>Svelte · Tauri"]
         BE["Backend<br/>NestJS modular monolith"]
         PE{{"Permission Engine"}}
         OLL["Ollama<br/>loopback only"]
@@ -83,7 +83,7 @@ See [Section 6 of the plan](docs/PLAN.md#6-architecture) for trust boundaries, r
 | Data | PostgreSQL · pgvector · Drizzle ORM |
 | AI | Vercel AI SDK behind internal ports · Ollama (local) · optional cloud provider |
 | Tools | Model Context Protocol — official TypeScript SDK, first-party servers only |
-| Frontend | React · Vite · shadcn/ui · TanStack Query |
+| Frontend | Svelte 5 · SvelteKit (static SPA) · shadcn-svelte · Tailwind CSS |
 | Desktop | Tauri 2 |
 | Voice *(Phase 5)* | LiveKit Agents (Node.js), self-hosted |
 | Quality | Vitest · Testcontainers · Playwright · dependency-cruiser · OpenTelemetry |
@@ -126,7 +126,7 @@ Phases 0–2 form **v0.1**: local streaming chat, explicit memory with a Memory 
 mell-assistant/
 ├── apps/
 │   ├── backend/        NestJS modular monolith
-│   ├── ui/             React + Vite (Tauri shell from Phase 3)
+│   ├── ui/             Svelte 5 + SvelteKit (Tauri shell from Phase 3)
 │   └── mcp-device/     First-party device MCP server
 ├── packages/
 │   └── contracts/      Shared Zod schemas and types
@@ -149,7 +149,7 @@ This project follows [agent-playbook](https://github.com/eerenyilmazz/agent-play
 
 - Templates: software, desktop, web
 - Roles: backend, frontend, qa-security, security-reviewer, code-reviewer, decision-maker, technical-writer, devops-cloud
-- Stack: TypeScript (strict) on Node.js LTS · NestJS · Drizzle · PostgreSQL + pgvector · Vercel AI SDK · MCP TypeScript SDK · React or Angular (OD-5) · Tauri 2
+- Stack: TypeScript (strict) on Node.js LTS · NestJS · Drizzle · PostgreSQL + pgvector · Vercel AI SDK · MCP TypeScript SDK · Svelte 5 · Tauri 2
 
 ### Overrides
 
