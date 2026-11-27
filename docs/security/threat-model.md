@@ -27,7 +27,7 @@
 | T2 | Malicious web page in the user's browser | Can send requests to `localhost` from the browser |
 | T3 | Network attacker | On the same LAN or the internet; can scan and connect to exposed ports |
 | T4 | Compromised dependency | Malicious npm package or container image in the build or runtime |
-| T5 | Holder of a lost or stolen device | Has the Mac, possibly unlocked |
+| T5 | Holder of a lost or stolen remote device | Not applicable in v0.x: the host is the only device (ADR 0013); returns with a remote client |
 | T6 | The model itself | Hallucinates, misreads instructions or follows injected text; not malicious but not trusted |
 
 Out of scope: an attacker with administrator access to the host OS account; malicious third-party MCP servers (not allowed in v0.x, ADR 0003).
@@ -36,12 +36,8 @@ Out of scope: an attacker with administrator access to the host OS account; mali
 
 ```mermaid
 flowchart LR
-    subgraph USERZONE["User devices"]
+    subgraph HOST["Linux host (only device)"]
         BR["Browser / Tauri UI"]
-        CONN["Mac device connector<br/>+ MCP server"]
-    end
-
-    subgraph HOST["Windows host"]
         BE["Backend<br/>Permission Engine"]
         MCPW["Host MCP server<br/>stdio"]
         OLL["Ollama"]
@@ -56,12 +52,12 @@ flowchart LR
     BE -->|"TB2 · loopback HTTP"| OLL
     BE -->|"TB3 · SQL, loopback"| DB
     BE -->|"TB4 · stdio"| MCPW
-    CONN -->|"TB5 · outbound WebSocket, device auth"| BE
     EXT -.->|"TB6 · content ingress, taints turn"| MCPW
-    EXT -.->|"TB6"| CONN
     BE -->|"TB7 · HTTPS, data policy, spend cap"| CLOUD
     REG -.->|"TB8 · build and update"| HOST
 ```
+
+TB5 (outbound device connector, ADR 0009) is reserved for a later remote device and has no instance in v0.x (ADR 0013). Rows that apply only to TB5 are kept for that case and marked *n/a in v0.x*.
 
 ## 4. STRIDE per boundary
 
@@ -69,18 +65,18 @@ flowchart LR
 | --- | --- | --- | --- | --- | --- |
 | S1 | TB1 | Spoofing | Local web page (T2) calls the backend as the user | Auth on localhost, `Origin`/`Host` validation, CSRF protection, no unauthenticated SSE/WebSocket (12.2, ADR 0008) | Medium |
 | S2 | TB1 | Elevation | Approval endpoint called without the user | Approvals require an authenticated session and a single-use id bound to the request (9.4) | Medium |
-| S3 | TB2/TB3 | Info. disclosure | Ollama or PostgreSQL reachable from the network (T3) | Loopback binding; startup self-check refuses public bindings (12.1) | Medium |
-| S4 | TB4/TB5 | Tampering | Tool definition changed after approval (rug pull) | Definitions pinned by hash; change disables the tool (9.6) | Medium |
-| S5 | TB5 | Spoofing | Rogue process impersonates a device | Per-device credential and key; revocation; no listening port on devices (6.3, ADR 0009) | Medium |
-| S6 | TB5 | Elevation | Compromised backend issues calls beyond the user's device settings | Connector enforces its own local allow-list (6.3) | Low |
+| S3 | TB2/TB3 | Info. disclosure | Ollama or PostgreSQL reachable from the network (T3) | Loopback binding, Docker ports published on `127.0.0.1` only; startup self-check refuses non-loopback bindings (12.1) | Medium |
+| S4 | TB4 | Tampering | Tool definition changed after approval (rug pull) | Definitions pinned by hash; change disables the tool (9.6) | Medium |
+| S5 | TB5 | Spoofing | Rogue process impersonates a device | Per-device credential and key; revocation; no listening port on devices (6.3, ADR 0009) | n/a in v0.x |
+| S6 | TB5 | Elevation | Compromised backend issues calls beyond the user's device settings | Connector enforces its own local allow-list (6.3) | n/a in v0.x |
 | S7 | TB6 | Tampering | Injected instructions in file names or contents steer the model (T1) | Content-based taint; external/destructive blocked in tainted turns; content passed as delimited data (9.3, 9.5, ADR 0004) | High |
 | S8 | TB6 | Info. disclosure | Injection exfiltrates memory or files via a tool | No external-communication tools in v0.x; blocked in tainted turns afterwards (9.3) | High |
-| S9 | TB4/TB5 | Tampering | Target set changes between approval and execution (TOCTOU) | Approval binding re-verified at execution (9.4, ADR 0010) | Medium |
-| S10 | TB1–TB5 | Repudiation | No evidence of what was proposed, approved or run | Append-only activity log with correlation ids; app role cannot update or delete it (6.9, 13.1) | Low |
+| S9 | TB4 | Tampering | Target set changes between approval and execution (TOCTOU) | Approval binding re-verified at execution (9.4, ADR 0010) | Medium |
+| S10 | TB1–TB4 | Repudiation | No evidence of what was proposed, approved or run | Append-only activity log with correlation ids; app role cannot update or delete it (6.9, 13.1) | Low |
 | S11 | TB7 | Info. disclosure | Sensitive memory sent to a cloud provider | `sensitive` never sent without per-request consent; cloud is opt-in (12.6) | Medium |
 | S12 | TB7 | Denial of service | Runaway loop or abuse burns cloud budget | Spend cap fails closed; bounded tool steps per turn (12.7, 6.5) | Low |
 | S13 | TB8 | Tampering | Malicious npm package or image (T4) | Lockfile-only installs, no lifecycle scripts, release-age delay, digest-pinned images, SHA-pinned actions (6.8) | High |
-| S14 | Device | Info. disclosure | Lost Mac (T5) used to reach the host | Revoke device from the host UI; device credential is the only access path (6.3) | Medium |
+| S14 | Device | Info. disclosure | Lost remote device (T5) used to reach the host | Revoke device from the host UI; device credential is the only access path (6.3) | n/a in v0.x |
 
 ## 5. OWASP Top 10 for Agentic Applications 2026
 
@@ -88,7 +84,7 @@ flowchart LR
 | --- | --- | --- | --- | --- |
 | ASI01 | Agent Goal Hijack | Yes — any file or page MELL reads | Content-based taint; policy outside the model (S7, S8) | Model may still give a wrong answer in a tainted turn; it cannot act on it externally |
 | ASI02 | Tool Misuse & Exploitation | Yes | Action classes incl. Control, allow-lists, approvals with binding, schema validation of tool calls, free-text limits for third parties (9.2–9.4, 9.8, 7.4) | Read tools can still read anything inside the allowed directories |
-| ASI03 | Identity & Privilege Abuse | Yes — device credentials | Per-device, revocable credentials; no shared or long-lived tokens in the UI (6.3, 12.4) | Host OS account compromise is out of scope |
+| ASI03 | Identity & Privilege Abuse | Limited in v0.x — the only device MCP server is a child process of the backend | No shared or long-lived tokens in the UI; per-device revocable credentials once a remote device exists (6.3, 12.4) | Host OS account compromise is out of scope |
 | ASI04 | Agentic Supply Chain Vulnerabilities | Yes — npm, MCP SDK, images | First-party MCP only; supply-chain controls (6.8, S13) | Zero-day in a pinned dependency |
 | ASI05 | Unexpected Code Execution | Low in v0.x — no code-execution tool | No shell or script tool in v0.x; any future one is Destructive-class | Re-assess when such a tool is proposed |
 | ASI06 | Memory & Context Poisoning | Yes | Explicit-only confirmed writes; tainted origin → candidate only; memory injected as data (10.3, 10.6, ADR 0005) | A user may confirm a poisoned candidate; UI shows origin and taint |
@@ -110,7 +106,7 @@ Adapted from playbook `roles/security-reviewer/abuse-cases.md` to an assistant w
 | AB5 | Same approval id submitted twice | Single-use id; second attempt rejected | SEC-05 |
 | AB6 | Tool description changed to include hidden instructions | Hash mismatch disables the tool | SEC-06 |
 | AB7 | Huge file or directory read floods the context | Size and count limits per tool call; truncation marked in the result | SEC-07 |
-| AB8 | Revoked Mac tries to reconnect | Connection refused; event logged | SEC-08 |
+| AB8 | A local process or LAN host tries to reach the device MCP server or a Mell service | MCP server has no port (stdio only); every service binds to loopback | SEC-08 |
 | AB9 | Same message posted twice by a retrying client | Idempotency key replays the first result | REL-01 |
 | AB10 | A web page or PDF tells MELL to "search Spotify for" a string containing private data | Free text to a third party in a tainted turn is treated as External and blocked | SEC-11 |
 | AB11 | A capability pack declares a sending tool as Control to avoid approvals | Action class and structured-only flag reviewed in the pack's PR; tool definition pinned | SEC-12 |
@@ -128,8 +124,8 @@ Each test lives in `eval/security/` or the backend test suite once code exists; 
 | SEC-05 | Approval replay → rejected | 2 |
 | SEC-06 | Changed tool definition hash → tool disabled until re-approved | 2 |
 | SEC-07 | Oversized reads are capped and marked | 2 |
-| SEC-08 | Revoked device cannot reconnect; Mac has no listening port (port scan) | 3 |
-| SEC-09 | Startup fails if Ollama, PostgreSQL or the backend is bound to a public interface | 0 |
+| SEC-08 | No Mell process listens on a non-loopback interface (`ss -ltnp`); the device MCP server listens on no port | 3 |
+| SEC-09 | Startup fails if Ollama, PostgreSQL, the backend or a Docker-published port is bound to a non-loopback interface | 0 |
 | SEC-10 | Prompt-injection corpus: 100% of external/destructive attempts blocked | 2 |
 | SEC-11 | Free-text parameter to a third party in a tainted turn → blocked; structured Control calls still allowed | 4 |
 | SEC-12 | Every installed pack's tools have a reviewed action class; unknown class → tool disabled | 3 |

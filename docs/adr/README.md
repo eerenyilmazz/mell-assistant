@@ -23,3 +23,4 @@ Rules: files are named `NNNN-short-title.md`, numbered sequentially and never re
 | 0010 | [Bind approvals to a verified fingerprint](0010-bind-approvals-to-verified-fingerprint.md) | accepted |
 | 0011 | [Svelte 5 for the frontend](0011-svelte-5-frontend.md) | accepted |
 | 0012 | [Capability packs and the Control action class](0012-capability-packs-and-control-class.md) | accepted |
+| 0013 | [Single Linux host](0013-single-linux-host.md) | accepted |

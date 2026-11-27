@@ -11,7 +11,7 @@ Terms as used in MELL's documentation. Plan sections are in parentheses.
 | **Confirmed (memory)** | A memory entry the user created or explicitly confirmed; the only kind injected as fact (10.3). |
 | **Control (action class)** | Structured state changes in the user's own apps and accounts — play, pause, volume — automatic once a pack is pre-approved (9.2, 9.8). |
 | **Correlation id** | Identifier assigned to a turn and propagated to every model call, tool call, approval, log line and span it causes (6.9). |
-| **Device connector** | Process on a non-host device that opens an outbound, authenticated connection to the backend and carries MCP messages for that device's MCP server (6.3). |
+| **Device connector** | Process on a non-host device that opens an outbound, authenticated connection to the backend and carries MCP messages for that device's MCP server (6.3). Not used in v0.x: the host is the only device (ADR 0013). |
 | **Hybrid retrieval** | Memory search that combines vector similarity and full-text search, fused by reciprocal rank fusion, after metadata filtering (10.9). |
 | **Lethal trifecta** | The combination of access to private data, exposure to untrusted content and the ability to communicate externally, which enables data exfiltration through prompt injection (3.1). |
 | **MCP** | Model Context Protocol; the standard protocol MELL uses between the backend and device tool servers (6.3). |
