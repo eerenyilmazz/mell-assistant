@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="660" viewBox="0 0 1280 660" role="img" aria-labelledby="t d">
   <title id="t">Mell architecture</title>
-  <desc id="d">The Windows host runs the UI, the NestJS backend with turn orchestrator, permission engine, memory, AI ports and activity log, plus Ollama, PostgreSQL and the host MCP server over stdio. The Mac runs a UI client and a device connector that connects outbound to the backend over a private network; no device opens a listening port. A cloud model is optional, policy-filtered and spend-capped.</desc>
+  <desc id="d">One Linux machine runs everything: the UI, the NestJS backend with turn orchestrator, permission engine, memory, AI ports and activity log, plus Ollama, PostgreSQL and the host MCP server over stdio. The host MCP server reaches the desktop through standard Linux interfaces: xdg-open for apps and URLs, MPRIS over D-Bus for media, PipeWire for volume and the Secret Service for tokens. Nothing listens beyond 127.0.0.1. A cloud model is optional, policy-filtered and spend-capped.</desc>
   <defs>
     <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1L9 5L0 9" fill="none" stroke="#A39E93" stroke-width="1.6"/></marker>
     <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1L9 5L0 9" fill="none" stroke="#FF5A1F" stroke-width="1.6"/></marker>
@@ -18,11 +18,11 @@
   <rect width="1280" height="660" rx="14" fill="#111110"/>
 
   <!-- zones -->
-  <text x="48" y="52" class="mono t3 lbl">WINDOWS HOST · PRIMARY</text>
+  <text x="48" y="52" class="mono t3 lbl">LINUX HOST · ONLY MACHINE</text>
   <path d="M48 64H840" stroke="#2A2825"/>
-  <text x="888" y="52" class="mono t3 lbl">MACBOOK AIR</text>
+  <text x="888" y="52" class="mono t3 lbl">DESKTOP · VIA HOST TOOLS</text>
   <path d="M888 64H1232" stroke="#2A2825"/>
-  <text x="888" y="394" class="mono t3 lbl">OPTIONAL</text>
+  <text x="888" y="394" class="mono t3 lbl">OPTIONAL · EXTERNAL</text>
   <path d="M888 406H1232" stroke="#2A2825"/>
 
   <!-- UI -->
@@ -75,19 +75,16 @@
   <text x="456" y="450" class="mono t3 lbl">LOOPBACK</text>
   <text x="728" y="450" class="mono t3 lbl">STDIO</text>
 
-  <!-- mac -->
-  <rect x="888" y="88" width="344" height="72" rx="8" class="box"/>
-  <text x="908" y="118" class="sans t1 h">Interface</text>
-  <text x="908" y="142" class="mono t2 s">same app, remote session</text>
-  <rect x="888" y="184" width="344" height="112" rx="8" class="box"/>
-  <text x="908" y="214" class="sans t1 h">Device connector</text>
-  <text x="908" y="238" class="mono t2 s">Mac tools · local allow-list</text>
-  <text x="908" y="262" class="mono t3 s">outbound only · device-authenticated</text>
-  <text x="908" y="282" class="mono t3 s">no listening port</text>
-  <text x="888" y="324" class="mono t3 lbl">PRIVATE NETWORK · TAILSCALE / WIREGUARD</text>
-
-  <path d="M888 124H860V260H846" stroke="#A39E93" stroke-width="1.5" stroke-dasharray="6 5" fill="none" marker-end="url(#a)"/>
-  <path d="M888 240H872V312H846" stroke="#A39E93" stroke-width="1.5" stroke-dasharray="6 5" fill="none" marker-end="url(#a)"/>
+  <!-- desktop -->
+  <rect x="888" y="88" width="344" height="232" rx="8" class="box"/>
+  <text x="908" y="124" class="sans t1" style="font-size:15px">Apps and URLs</text><text x="1212" y="124" text-anchor="end" class="mono t2 s">xdg-open · .desktop</text>
+  <path d="M908 146H1212" stroke="#2A2825"/>
+  <text x="908" y="172" class="sans t1" style="font-size:15px">Media</text><text x="1212" y="172" text-anchor="end" class="mono t2 s">MPRIS over D-Bus</text>
+  <path d="M908 194H1212" stroke="#2A2825"/>
+  <text x="908" y="220" class="sans t1" style="font-size:15px">Volume</text><text x="1212" y="220" text-anchor="end" class="mono t2 s">PipeWire</text>
+  <path d="M908 242H1212" stroke="#2A2825"/>
+  <text x="908" y="268" class="sans t1" style="font-size:15px">Tokens</text><text x="1212" y="268" text-anchor="end" class="mono t2 s">Secret Service</text>
+  <text x="908" y="304" class="mono t3 s">Linux adapter · Wayland / X11 per pack</text>
 
   <!-- cloud -->
   <rect x="888" y="426" width="344" height="100" rx="8" class="box"/>
@@ -100,9 +97,8 @@
   <path d="M48 610H1232" stroke="#2A2825"/>
   <g class="mono t3" style="font-size:11.5px">
     <path d="M48 634H84" stroke="#A39E93" stroke-width="1.5"/><text x="94" y="638">local</text>
-    <path d="M170 634H206" stroke="#A39E93" stroke-width="1.5" stroke-dasharray="6 5"/><text x="216" y="638">private network</text>
-    <path d="M372 634H408" stroke="#FF5A1F" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/><text x="418" y="638">external, opt-in</text>
-    <rect x="566" y="626" width="16" height="16" rx="3" fill="#1B1210" stroke="#FF5A1F"/><text x="592" y="638">decides every action</text>
-    <text x="1232" y="638" text-anchor="end">Only the backend listens on the network</text>
+    <path d="M170 634H206" stroke="#FF5A1F" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/><text x="216" y="638">external, opt-in</text>
+    <rect x="364" y="626" width="16" height="16" rx="3" fill="#1B1210" stroke="#FF5A1F"/><text x="390" y="638">decides every action</text>
+    <text x="1232" y="638" text-anchor="end">Nothing listens beyond 127.0.0.1</text>
   </g>
 </svg>

@@ -2,10 +2,11 @@
 
 | Field         | Value                                                |
 | ------------- | ---------------------------------------------------- |
-| Status        | Draft v0.6 — for review                              |
+| Status        | Draft v0.7 — for review                              |
 | Owner         | Eren                                                 |
-| Last updated  | 2026-11-26                                           |
+| Last updated  | 2026-11-27                                           |
 | Document type | Plan (no implementation in this phase)               |
+| Changes v0.7  | Single Linux host: Windows and macOS removed from scope (ADR 0013); topology, device integration, phase 3, data model and open decisions updated; Linux-specific network and desktop notes (6.3, 12) |
 | Changes v0.6  | Open-ended capabilities: capability packs, catalog and Control action class (9.8, 9.2, ADR 0012); phases 3–4 re-scoped; `capabilities` table |
 | Changes v0.5.3 | UI design direction: calm command surface with an editorial thread and context column; design tokens; anti-patterns to avoid (16, 16.6) |
 | Changes v0.5.2 | Frontend decided: Svelte 5 (OD-5 closed, ADR 0011); streaming-rendering rules for the chat UI (16.0) |
@@ -97,6 +98,7 @@ Before fixing the architecture, comparable projects and their documented failure
 | Desktop packaging (Tauri)                     | Deferred (Phase 3); browser UI on localhost        |
 | Redis                                         | Deferred until a documented need exists            |
 | VPS / remote hosting                          | Decided by Open Decision OD-1                      |
+| Windows and macOS hosts or devices            | Removed in v0.7 (ADR 0013)                         |
 | Mobile client                                 | After desktop is stable                            |
 | Unattended destructive or external actions    | Never                                              |
 
@@ -105,9 +107,9 @@ Before fixing the architecture, comparable projects and their documented failure
 | ID  | Constraint / Assumption |
 | --- | --- |
 | C-1 | Single developer working part-time alongside full-time employment and other projects. |
-| C-2 | Primary host: Windows desktop with an RTX 4070 Ti (12 GB VRAM). |
-| C-3 | Secondary client: MacBook Air M1. |
-| C-4 | The Windows host is not guaranteed to be online at all times; the Mac client depends on it. |
+| C-2 | Single host: Linux desktop with an RTX 4070 Ti (12 GB VRAM) and 32 GB RAM. It is the only machine in v0.x (ADR 0013). |
+| C-3 | No secondary client or remote device in v0.x; a mobile client comes later (Section 4). |
+| C-4 | The host is not guaranteed to be online at all times; when it is off, Mell is off. |
 | C-5 | Primary interaction language is Turkish; code, documentation and commits are in English. |
 | C-6 | Single user initially; the schema is keyed by `user_id` so additional profiles can be added without rework. |
 
@@ -123,35 +125,26 @@ A **TypeScript modular monolith** (NestJS on Node.js LTS). Modules are separated
 
 ```mermaid
 flowchart LR
-    subgraph WIN["Windows host (primary)"]
+    subgraph HOST["Linux host (only machine)"]
         direction TB
-        UIW["UI<br/>Browser / Tauri"]
-        BE["mell-backend<br/>NestJS · Node LTS<br/>authenticated"]
+        UI["UI<br/>Browser / Tauri"]
+        BE["mell-backend<br/>NestJS · Node LTS<br/>authenticated, 127.0.0.1"]
         OLL["Ollama<br/>127.0.0.1 only"]
         PG[("PostgreSQL + pgvector<br/>127.0.0.1 only")]
-        MCPW["Windows MCP server<br/>stdio child process<br/>no port"]
-        UIW --> BE
+        MCP["Device MCP server<br/>Linux adapter<br/>stdio child process, no port"]
+        UI --> BE
         BE --> OLL
         BE --> PG
-        BE -->|"MCP over stdio"| MCPW
-    end
-
-    subgraph MAC["MacBook Air M1 (secondary)"]
-        direction TB
-        UIM["UI<br/>Browser / Tauri"]
-        MCPM["Device connector +<br/>Mac MCP server<br/>no listening port"]
+        BE -->|"MCP over stdio"| MCP
     end
 
     CLOUD["Cloud AI provider<br/>opt-in, capped"]
-
-    UIM -->|"private network<br/>Tailscale / WireGuard"| BE
-    MCPM -->|"outbound WebSocket<br/>device-authenticated"| BE
     BE -->|"HTTPS, per data policy"| CLOUD
 
     classDef local fill:#1f2937,stroke:#3b82f6,color:#f9fafb
     classDef store fill:#111827,stroke:#10b981,color:#f9fafb
     classDef ext fill:#111827,stroke:#f59e0b,color:#f9fafb
-    class UIW,UIM,BE,OLL,MCPW,MCPM local
+    class UI,BE,OLL,MCP local
     class PG store
     class CLOUD ext
 ```
@@ -160,53 +153,31 @@ Key points:
 
 - The backend is the only component that holds state, credentials and policy.
 - The UI never accesses the database, the model runtime or the operating system directly.
-- Only the backend listens on the private network; Ollama, PostgreSQL and every device MCP server are never reachable from another machine.
-- Each machine exposes its capabilities through its own first-party MCP server. A command such as "open IntelliJ on my Windows machine" issued from the Mac is routed by the backend to the Windows MCP server. How each server is reached is defined in Section 6.3.
+- Nothing listens on a non-loopback interface in v0.x: the backend, Ollama and PostgreSQL bind to `127.0.0.1`, and the device MCP server has no port at all.
+- The host exposes its capabilities through one first-party MCP server with a Linux adapter. How it is reached is defined in Section 6.3.
 
 ### 6.3 Device Integration and Connectivity
 
 The original plan included a custom `mell-device-agent` protocol per OS. This plan replaces it with **one first-party MCP server per device**, using the official Tier 1 TypeScript MCP SDK for both client and servers. MCP-specific risks (Section 3.1) are addressed by first-party-only servers and pinned tool definitions (Section 9.6).
 
-**No device MCP server opens a listening port.** v0.4 required MCP servers to bind to loopback while also expecting the Windows backend to reach the Mac server over the network — a contradiction. v0.5 resolves it by making every connection originate from the side that already has a trust anchor:
+**No device MCP server opens a listening port.** The backend spawns the host's MCP server as a child process and talks to it over **stdio**; there is nothing to scan or hijack.
 
 | Device | Transport | Who connects | Listening ports on the device |
 | --- | --- | --- | --- |
-| Windows host | MCP over **stdio**: the backend spawns the server as a child process | Backend → child process | None |
-| Mac (and any later device) | MCP JSON-RPC carried over an **outbound, authenticated WebSocket** opened by the *device connector* on the Mac to the backend's private-network address | Device → backend | None |
+| Linux host (only device in v0.x) | MCP over **stdio**: the backend spawns the server as a child process | Backend → child process | None |
+| Any later remote device (e.g. mobile) | MCP over an **outbound, authenticated WebSocket** opened by a device connector, as defined in ADR 0009 | Device → backend | None |
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant DC as Mac device connector
-    participant BE as Backend (private-network listener)
-    participant PE as Permission Engine
-    participant MS as Mac MCP server (in-process)
+Up to v0.6 a MacBook was the second device; it was removed in v0.7 (ADR 0013). The outbound-connector design in ADR 0009 stays the rule for any remote device added later, together with Section 12 items 3–4.
 
-    DC->>BE: WebSocket connect (TLS inside tailnet)
-    DC->>BE: Device token + device key signature
-    BE->>BE: Verify device record, scope, revocation
-    BE-->>DC: Session accepted
-    Note over DC,BE: MCP messages now flow over this channel
-    BE->>DC: tools/list
-    DC->>MS: tools/list
-    MS-->>DC: Definitions
-    DC-->>BE: Definitions (hash-checked, Sec. 9.6)
-    PE->>BE: Approved call
-    BE->>DC: tools/call (signed approval id)
-    DC->>MS: Execute within local allow-list
-    MS-->>DC: Result
-    DC-->>BE: Result (untrusted, taints turn)
-```
+The Linux adapter uses standard desktop interfaces; each capability pack declares what works under Wayland and X11 (OD-8):
 
-Properties:
-
-- The Mac never accepts inbound connections, so it works behind NAT and has no port to scan or hijack.
-- Device credentials are per device, revocable from the UI, and rotated on re-pairing.
-- The connector enforces its own local allow-list (directories, applications) in addition to the backend policy, so a compromised backend cannot exceed what the user configured on that device.
-- If the backend is offline the connector retries with backoff; the Mac UI shows the host as offline (Section 6.9).
-- The connector may later be hosted inside the Tauri application to avoid a second process (OD-3).
-
-Alternative considered: binding the Mac MCP server to the tailnet interface with mutual TLS. Rejected for v0.x because it adds a listening service on the laptop and a second certificate lifecycle. Recorded in ADR 0009.
+| Need | Interface |
+| --- | --- |
+| Open apps, files and URLs | `.desktop` entries and `xdg-open` |
+| Media control (Spotify desktop, browsers) | MPRIS over the D-Bus session bus |
+| Volume and mute | PipeWire (`wpctl`) |
+| Secrets (OAuth tokens) | Secret Service API (GNOME Keyring or KWallet) |
+| System status | `/proc`, `/sys` and `nvidia-smi` |
 
 ### 6.4 Trust Boundaries
 
@@ -320,12 +291,12 @@ sequenceDiagram
 | UI components | shadcn-svelte (copied source) + Tailwind CSS | Phase 1 | Components live in the repo, not as runtime dependencies |
 | Client state | Svelte runes and a small typed API client generated from `packages/contracts` | Phase 1 | No global store or query library until a second use appears |
 | Streaming Markdown | Block-level incremental renderer + DOMPurify | Phase 1 | Rendering cost per token stays constant (16.0) |
-| Desktop shell | Tauri 2 | Phase 3 | Small footprint; backend bundled as a compiled Node sidecar on the host |
+| Desktop shell | Tauri 2 (Linux: WebKitGTK; AppImage and `.deb`) | Phase 3 | Small footprint; backend bundled as a compiled Node sidecar on the host |
 | Voice | LiveKit Agents (Node.js) + self-hosted LiveKit server | Phase 5 | Same language; WebRTC transport included; measured against alternatives |
 | Testing | Vitest, Testcontainers (Node), Playwright | Phase 0–1 | Unit, integration with real PostgreSQL, end-to-end UI |
 | Architecture rules | dependency-cruiser | Phase 0 | Enforces module boundaries in CI |
 | Logging / tracing | pino + OpenTelemetry | Phase 0 | Structured logs; per-stage traces for chat and voice |
-| Networking | Tailscale or WireGuard | Phase 3 | Private cross-device access |
+| Networking | Tailscale or WireGuard | With a remote client (later) | Private cross-device access; not used in v0.x (ADR 0013) |
 
 Agent frameworks (Mastra, LangGraph.js) are deliberately **not** adopted in v0.x: the permission engine must own tool execution, and the AI SDK's lower-level loop keeps that boundary explicit. Re-evaluated in Phase 6.
 
@@ -391,7 +362,7 @@ Because MELL will hold personal data and run tools on the user's machines, a com
 | --- | --- |
 | Local model unavailable | Turn fails fast with a clear status; cloud fallback only if enabled, under cap and the context contains no `sensitive` data |
 | Model returns malformed tool call | Rejected and logged (7.4); the model receives an error result once, then the turn ends with an explanation |
-| MCP server or device connector disconnected | Tools of that device are hidden from the tool list; pending approvals for that device expire; UI shows the device as offline |
+| MCP server disconnected | Its tools are hidden from the tool list; pending approvals for it expire; the UI shows the device as offline; the backend restarts the child process with backoff |
 | Backend restarted mid-turn | Turns left `in_progress` are marked `interrupted` on startup; nothing is re-executed automatically |
 | Database unavailable | Backend reports not-ready on the health endpoint and refuses new turns |
 
@@ -477,7 +448,7 @@ flowchart TD
 | `tools`        | MCP client integration, tool catalogue, definition pinning  | 2     |
 | `approval`     | Policy evaluation, trifecta rule, approval requests         | 2     |
 | `activity`     | Audit log of tool invocations, approvals and memory changes | 2     |
-| `device`       | Device registry (host in Phase 2), connector authentication and routing (Phase 3) | 2–3 |
+| `device`       | Device registry (the host, Phase 2) and MCP child-process lifecycle; remote-device authentication only with a later remote client (ADR 0009) | 2 |
 | `voice`        | Session tokens, voice session management                    | 5     |
 | `agent`        | Agent profiles (prompt + allowed tools), orchestration      | 6     |
 | `task`         | Reminders, scheduled and long-running jobs                  | 6     |
@@ -728,8 +699,8 @@ A **capability pack** is a first-party MCP server (or a set of tools inside one)
 | Tools | `media.play(query)`, `media.pause()`, `media.next()`, `media.volume(level)`, `youtube.open(url)` |
 | Action class per tool | `pause/next/volume` → Control; `youtube.open` → Launch; `media.play(query)` → Control with free text |
 | Output schema and taint | Structured-only (no taint) or free-text (taints the turn), per 9.3 |
-| Credentials | OAuth tokens in the OS secret store, referenced by id; never in the database or prompts |
-| Devices | Where it can run (host, Mac, both) |
+| Credentials | OAuth tokens in the Secret Service store, referenced by id; never in the database or prompts |
+| Platforms | Where it runs: Linux, and Wayland and/or X11 (OD-8) |
 | Phase | When it ships |
 
 Adding an ability means adding or extending a pack, pinning its tool definitions (9.6) and reviewing its action classes in the PR (19). The interface does not change; the thread shows receipts for whatever ran.
@@ -984,11 +955,11 @@ Every voice turn is traced with one span per stage. Providers (cloud real-time, 
 
 Threats, the mitigations below and the tests that verify them are tracked in [`security/threat-model.md`](security/threat-model.md).
 
-1. **Network binding:** Ollama and PostgreSQL bind to `127.0.0.1` only. Device MCP servers open **no listening port** at all (stdio on the host, outbound connector on other devices, Section 6.3). The backend binds to loopback and, when cross-device access is enabled, to the private-network interface only. A startup self-check refuses to run if any service is bound to a public interface.
+1. **Network binding:** Ollama and PostgreSQL bind to `127.0.0.1` only. Device MCP servers open **no listening port** at all (stdio on the host, outbound connector on any later remote device, Section 6.3). The backend binds to loopback and, only when a remote client is added later, to the private-network interface. Every Docker Compose port is published as `127.0.0.1:<port>:<port>`, because Docker's published ports bypass host firewalls such as UFW. A startup self-check refuses to run if any service is bound to a non-loopback interface.
 2. **Local endpoint authentication:** the backend requires authentication even on localhost, validates `Origin`/`Host` headers, and exposes no unauthenticated WebSocket or SSE endpoint. This prevents malicious web pages in the user's browser from driving the local agent.
-3. **Private network:** cross-device traffic uses Tailscale or WireGuard; nothing is exposed publicly.
-4. **Device identity:** each device has its own revocable credential and key; the device connector authenticates on every connection, and each device acts only within its granted scope and its own local allow-list.
-5. **Secrets:** kept in environment variables or an OS secret store; never in frontend code, logs or the repository. Secret scanning runs in CI.
+3. **Private network:** no cross-device traffic in v0.x (ADR 0013). When a remote client is added, it uses Tailscale or WireGuard; nothing is exposed publicly.
+4. **Device identity:** the host's MCP server is a child process of the backend. Any later remote device has its own revocable credential and key; the device connector authenticates on every connection, and each device acts only within its granted scope and its own local allow-list.
+5. **Secrets:** kept in environment variables or the Secret Service store (6.3); never in frontend code, logs or the repository. Secret scanning runs in CI.
 6. **Cloud data policy:** each cloud request is logged with provider, model and data classification; `sensitive` data is never sent without per-request consent. Remote/"cloud-routed" models offered through the local runtime are disabled.
 7. **Spend cap:** configurable monthly cap per cloud provider; requests fail closed when exceeded; usage visible in the UI.
 8. **Audit:** all tool invocations, approvals (with their binding), binding mismatches and memory changes are recorded with the turn's correlation id.
@@ -1018,7 +989,7 @@ Threats, the mitigations below and the tests that verify them are tracked in [`s
 | `approval_requests` | 2     | Approvals with their binding (9.4) |
 | `activity_logs`     | 2     | Append-only audit trail |
 
-`devices` moves from Phase 3 to Phase 2 because the Windows host is itself a device with a pinned tool set. Other tables (`agents`, `agent_runs`, `tasks`, `scheduled_jobs`, etc.) are introduced with their phases. This table, the ER diagram and the schema in 10.7 are kept consistent; a change to one is a change to all three in the same PR.
+`devices` moves from Phase 3 to Phase 2 because the host is itself a device with a pinned tool set; in v0.x it is the only row. Other tables (`agents`, `agent_runs`, `tasks`, `scheduled_jobs`, etc.) are introduced with their phases. This table, the ER diagram and the schema in 10.7 are kept consistent; a change to one is a change to all three in the same PR.
 
 ```mermaid
 erDiagram
@@ -1129,7 +1100,7 @@ erDiagram
         uuid id PK
         uuid user_id FK
         string name
-        string platform "windows|macos"
+        string platform "linux"
         string connection "stdio|connector"
         string credential_fingerprint
         timestamp last_seen_at
@@ -1227,7 +1198,7 @@ Chat responses stream via SSE. WebSocket is introduced only when bidirectional r
 | Security           | Prompt-injection corpus, content-based taint (file names and contents), tool-definition change, approval binding mismatch and replay, unauthenticated local requests | 2 |
 | Reliability        | Idempotent replay, cancellation mid-stream and mid-tool, interrupted turns after restart | 1 |
 | Memory evaluation  | Recall, update, correction, deletion, scope isolation         | 2          |
-| Recovery           | Network loss, host offline, model unavailable                 | 3          |
+| Recovery           | MCP server crash, model unavailable, database unavailable     | 3          |
 | Voice              | Per-stage latency, Turkish WER, barge-in, false wake rate     | 5          |
 
 ### 14.2 Memory Evaluation Set
@@ -1269,7 +1240,7 @@ Each phase ends with a working, demonstrable system. Phases define scope, not da
 flowchart LR
     P0["Phase 0<br/>Foundation"] --> P1["Phase 1<br/>Core chat<br/>v0.1-alpha"]
     P1 --> P2["Phase 2<br/>Memory + first tools<br/>v0.1"]
-    P2 --> P3["Phase 3<br/>Second device<br/>Tauri"]
+    P2 --> P3["Phase 3<br/>Desktop shell<br/>host control"]
     P2 --> P4["Phase 4<br/>Assisted memory<br/>routing"]
     P3 --> P5["Phase 5<br/>Voice"]
     P4 --> P6["Phase 6<br/>Agents, automation,<br/>external actions"]
@@ -1317,22 +1288,21 @@ Phases 0–2 (highlighted) make up v0.1. No phase after Phase 2 starts until the
 - Embedding recall test and ADR; pgvector; memory CRUD, scopes, semantic search, export.
 - Explicit "remember / forget" handling in chat.
 - Memory Center screen.
-- First-party Windows MCP server (`filesystem.list`, `filesystem.read`, `system.status`); definition pinning.
+- First-party device MCP server with the Linux adapter (`filesystem.list`, `filesystem.read`, `system.status`); definition pinning.
 - Permission Engine with trifecta rule; approval requests; Activity screen.
 - Tool-call contract and security test suites.
 - Backup job.
 
 **Exit:** memory and security thresholds in Section 14.4 are met; a file read outside scope is blocked and logged; reading any file taints the turn; a modified tool definition disables the tool; an approval whose target changed after approval is not executed.
 
-### Phase 3 — Second Device and Desktop Shell
+### Phase 3 — Desktop Shell and Host Control
 
-- Tauri 2 packaging for Windows and macOS.
-- Private network; device registry and authentication.
-- First-party Mac MCP server; routing by target device.
-- Capability packs: apps and URLs, system controls (Control class); `capabilities` table and per-pack pre-approval.
-- Host-offline handling in the client; tested restore from backup.
+- Tauri 2 packaging for Linux (AppImage and `.deb`).
+- Capability packs: apps and URLs, system controls (Control class) through the Linux adapter (6.3); `capabilities` table and per-pack pre-approval.
+- Supported desktop session(s) decided (OD-8) and declared per pack.
+- Tested restore from backup.
 
-**Exit:** from the Mac, the user can chat and run an allowed tool on both machines; the Mac opens no listening port (verified with a port scan); a revoked device cannot reconnect; an offline host produces a clear status.
+**Exit:** the Tauri app runs on the host; "IntelliJ'de projeyi aç" and "sesi yarıya indir" work end to end; no Mell process listens on a non-loopback interface (verified with `ss -ltnp`); disabling a pack removes its tools immediately; an MCP server crash produces a clear status and a restart.
 
 ### Phase 4 — Capabilities, Assisted Memory and Routing
 
@@ -1362,7 +1332,7 @@ Phases 0–2 (highlighted) make up v0.1. No phase after Phase 2 starts until the
 
 ### Phase 8 — Hardening
 
-- Monitoring and error reporting; installers; backup/restore drills; external security review; per-server review process for any third-party MCP server; optional VPS.
+- Monitoring and error reporting; installers; backup/restore drills; external security review; per-server review process for any third-party MCP server; optional VPS; remote client access (private network, device registry, ADR 0009).
 
 ## 16. UI Sketches (v0.1)
 
@@ -1464,8 +1434,8 @@ Every memory write and tool call is shown inline with its status, so nothing hap
 │ ⚠  Approval required                         expires 4:58 │
 ├──────────────────────────────────────────────────────────┤
 │ Action    filesystem.delete            class: Destructive │
-│ Device    Windows host                                    │
-│ Scope     3 files in C:\Users\<user>\Downloads\tmp        │
+│ Device    Linux host                                      │
+│ Scope     3 files in ~/Downloads/tmp                      │
 │           • report-old.pdf     (2.1 MB)                   │
 │           • report-old (1).pdf (2.1 MB)                   │
 │           • notes.tmp          (4 KB)                     │
@@ -1504,8 +1474,8 @@ If the turn is tainted, External and Destructive actions do not reach this dialo
 | Decision point (in thread) | Pending approval with action, target, taint, binding fingerprint, expiry, *Deny* and *Allow once* | `approval_requests` (9.4) |
 | In context (right) | Memory entries injected into the current turn, with scope, confirmation and source | Retrieval result of stage 2 (10.9) |
 | System (right) | GPU memory, CPU, resident models, TTFT | Host telemetry, `model_usage_logs` |
-| Devices (right) | Host and connected devices, transport, cloud status and spend | `devices`, connector heartbeats, spend cap |
-| Safeguards (right) | Kill switches for microphone, tools, remote access and cloud | Settings (12.9) |
+| Devices (right) | Host status, MCP server state, cloud status and spend | `devices`, MCP heartbeats, spend cap |
+| Safeguards (right) | Kill switches for microphone, tools and cloud | Settings (12.9) |
 | Command bar (bottom) | Listening state and live level, text input, shortcuts (hold Space to talk, Esc to stop) | Voice session (11) |
 
 Rules:
@@ -1528,7 +1498,7 @@ Rules:
 | R-6  | Local model tool calling unreliable | Medium | Schema validation; contract tests; pinned runtime; cloud or runtime fallback |
 | R-7  | Turkish quality of embeddings or models insufficient | Medium | Turkish evaluation sets; multiple candidates; Turkish-adapted encoders |
 | R-8  | VRAM contention and model swap latency | Medium | One resident chat model; explicit Ollama scheduling config; benchmarks |
-| R-9  | Host offline makes the secondary client unusable | Medium | Clear offline state; OD-1 decides VPS timing |
+| R-9  | Host offline makes Mell unavailable | Low | Single user at the host in v0.x; OD-1 revisited with the mobile client |
 | R-10 | Voice latency or wake-word false triggers make voice unusable | Medium | Push-to-talk first; measured budget; wake word optional |
 | R-11 | Uncontrolled cloud cost | Low | Spend cap; usage visibility |
 | R-12 | Coupling to AI SDK or a specific provider | Medium | Internal ports; adapters isolated in `infrastructure`; pinned versions |
@@ -1536,18 +1506,20 @@ Rules:
 | R-14 | Developer less experienced in Node backend than in Java | Medium | NestJS mirrors Spring concepts; strict TypeScript; small scope; tests first |
 | R-15 | Approved action differs from executed action (TOCTOU) | High | Approval binding and re-verification at execution (9.4) |
 | R-16 | Injected instructions via file names or contents in an allowed directory | High | Content-based taint (9.3); no trusted-directory exception |
+| R-17 | Linux desktop differences (Wayland limits, distribution changes) break Control tools | Medium | Standard interfaces (6.3); OD-8 fixes one session; contract tests per pack |
 
 ## 18. Open Decisions
 
 | ID   | Question | Needed by |
 | ---- | -------- | --------- |
-| OD-1 | How reliably will the Windows host be online? Determines VPS timing. | Phase 3 |
+| OD-1 | How reliably will the host be online? Determines whether a VPS is needed once a remote client exists. | Mobile client |
 | OD-2 | Voice mode: cloud real-time, cascaded cloud, or local — decided by measurement. | Phase 5 |
-| OD-3 | Host the Mac device connector inside the Tauri app, or as a standalone background process. | Phase 3 |
+| OD-3 | ~~Mac device connector placement~~ — **withdrawn**: no Mac in scope (ADR 0013). | — |
 | OD-4 | Initial cloud provider and model. | Phase 1 |
 | OD-5 | ~~Frontend framework~~ — **closed**: Svelte 5 (6.7.1, ADR 0011). | — |
 | OD-6 | Final embedding model, from the recall test (Sec. 14.3). | Phase 2 |
 | OD-7 | Reuse an existing chat front end (e.g. Open WebUI) during early phases, or keep a minimal custom UI from the start. | Phase 1 |
+| OD-8 | Linux distribution and desktop session (Wayland or X11) for the host. | Phase 0 |
 
 ## 19. Engineering Rules
 
@@ -1578,8 +1550,8 @@ mell-assistant/
 ├── apps/
 │   ├── backend/               NestJS modular monolith
 │   ├── ui/                    Svelte 5 + SvelteKit static + Vite (+ src-tauri from Phase 3)
-│   └── mcp-device/            first-party device MCP server (one codebase,
-│                              platform adapters for Windows and macOS)
+│   └── mcp-device/            first-party device MCP server (Linux adapter
+│                              behind a platform port)
 ├── packages/
 │   └── contracts/             Zod schemas and DTO types shared by backend and UI
 ├── infrastructure/
@@ -1622,6 +1594,7 @@ Recorded in `docs/adr/` using the playbook ADR format. Accepted ADRs are immutab
 | [0010](adr/0010-bind-approvals-to-verified-fingerprint.md) | Bind approvals to a verified fingerprint |
 | [0011](adr/0011-svelte-5-frontend.md) | Svelte 5 for the frontend |
 | [0012](adr/0012-capability-packs-and-control-class.md) | Capability packs and the Control action class |
+| [0013](adr/0013-single-linux-host.md) | Single Linux host |
 
 ## Appendix A. References
 

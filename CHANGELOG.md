@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Plan v0.7: single Linux host (ADR 0013). Windows and macOS removed from scope; topology, device integration (Linux adapter: `xdg-open`, MPRIS, PipeWire, Secret Service), Phase 3 (desktop shell and host control), `devices.platform`, risks (R-9, new R-17) and open decisions (OD-1 moved, OD-3 withdrawn, new OD-8) updated; Docker ports must bind to `127.0.0.1` (Section 12); README, threat model and graphics follow.
 - Plan v0.6: open-ended capabilities — capability packs, initial catalog (apps, system controls, media incl. Spotify and YouTube, web, developer, reminders, calendar, smart home), Control action class, free-text rules, per-turn tool selection, `capabilities` table; phases 3–4 re-scoped (ADR 0012).
 - Plan v0.5.3: UI design direction — calm command surface with an editorial thread and context column, design tokens and anti-patterns (Section 16); new concept mockup.
 - Visual identity for all README graphics: warm near-black, one signal-orange accent, Instrument Serif / Instrument Sans / Geist Mono embedded as subset fonts; sources in `docs/assets/src/`, built by `scripts/build-assets.py`.
